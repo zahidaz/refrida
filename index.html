@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="https://frida.re/img/logotype.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Frida Web</title>
+    <script>
+      if (localStorage.getItem("frida-web-theme") === "dark" ||
+        (!localStorage.getItem("frida-web-theme") && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+        document.documentElement.classList.add("dark");
+      }
+    </script>
+    <script src="/frida-web-client.browser.js"></script>
+  </head>
+  <body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

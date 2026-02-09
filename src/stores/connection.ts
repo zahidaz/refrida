@@ -1,0 +1,146 @@
+import { create } from "zustand";
+import {
+  Client,
+  TransportLayerSecurity,
+  type FridaClient,
+  type FridaProcess,
+} from "@/lib/frida.ts";
+import { getItem, setItem } from "@/lib/storage.ts";
+import { useConsoleStore } from "./console.ts";
+
+interface ConnectionSettings {
+  serverUrl: string;
+  tls: string;
+  token: string;
+}
+
+interface ConnectionState {
+  serverUrl: string;
+  tls: string;
+  authToken: string;
+  connected: boolean;
+  busy: boolean;
+  deviceInfo: Record<string, unknown> | null;
+  spawnTarget: string;
+  setServerUrl: (url: string) => void;
+  setTls: (tls: string) => void;
+  setAuthToken: (token: string) => void;
+  setSpawnTarget: (target: string) => void;
+  connect: () => Promise<FridaProcess[] | null>;
+  disconnect: () => void;
+  spawnProcess: () => Promise<number | null>;
+  resumeProcess: (pid: number) => Promise<void>;
+  getClient: () => FridaClient | null;
+}
+
+let client: FridaClient | null = null;
+
+export const useConnectionStore = create<ConnectionState>((set, get) => {
+  const saved = getItem<ConnectionSettings>("frida-web-settings", {
+    serverUrl: "127.0.0.1:27042",
+    tls: "disabled",
+    token: "",
+  });
+
+  return {
+    serverUrl: saved.serverUrl,
+    tls: saved.tls,
+    authToken: saved.token,
+    connected: false,
+    busy: false,
+    deviceInfo: null,
+    spawnTarget: "",
+
+    setServerUrl: (serverUrl) => set({ serverUrl }),
+    setTls: (tls) => set({ tls }),
+    setAuthToken: (authToken) => set({ authToken }),
+    setSpawnTarget: (spawnTarget) => set({ spawnTarget }),
+
+    getClient: () => client,
+
+    connect: async () => {
+      const { serverUrl, tls, authToken, busy } = get();
+      if (busy) return null;
+      const host = serverUrl.trim();
+      if (!host) return null;
+      const append = useConsoleStore.getState().append;
+
+      setItem("frida-web-settings", {
+        serverUrl: host,
+        tls,
+        token: authToken.trim(),
+      });
+
+      append(`Connecting to ${host}...`, "system");
+      set({ busy: true });
+
+      try {
+        const tlsMap: Record<string, number | "auto"> = {
+          disabled: TransportLayerSecurity.Disabled,
+          enabled: TransportLayerSecurity.Enabled,
+          auto: "auto",
+        };
+        const opts: { tls: number | "auto"; token?: string } = {
+          tls: tlsMap[tls] || TransportLayerSecurity.Disabled,
+        };
+        const token = authToken.trim();
+        if (token) opts.token = token;
+        client = new Client(host, opts);
+
+        try {
+          const params = await client.querySystemParameters();
+          set({ deviceInfo: params });
+        } catch {}
+
+        const processes = await client.enumerateProcesses();
+        set({ connected: true });
+        append(
+          `Connected. ${processes.length} processes found.`,
+          "system",
+        );
+        return processes;
+      } catch (err) {
+        append(
+          `Connection failed: ${(err as Error).message}`,
+          "error",
+        );
+        client = null;
+        return null;
+      } finally {
+        set({ busy: false });
+      }
+    },
+
+    disconnect: () => {
+      client = null;
+      set({ connected: false, deviceInfo: null });
+    },
+
+    spawnProcess: async () => {
+      const { spawnTarget } = get();
+      const target = spawnTarget.trim();
+      if (!target || !client) return null;
+      const append = useConsoleStore.getState().append;
+      append(`Spawning ${target}...`, "system");
+      try {
+        const pid = await client.spawn(target);
+        append(`Spawned ${target} with PID ${pid}`, "system");
+        return pid;
+      } catch (err) {
+        append(`Spawn failed: ${(err as Error).message}`, "error");
+        return null;
+      }
+    },
+
+    resumeProcess: async (pid) => {
+      if (!client) return;
+      const append = useConsoleStore.getState().append;
+      try {
+        await client.resume(pid);
+        append(`Resumed PID ${pid}`, "system");
+      } catch (err) {
+        append(`Resume failed: ${(err as Error).message}`, "error");
+      }
+    },
+  };
+});
