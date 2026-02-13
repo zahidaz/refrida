@@ -16,7 +16,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "test:e2e": "vitest run --config vitest.config.e2e.ts"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.2.0",
