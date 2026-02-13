@@ -50,10 +50,10 @@ export default function DeviceBadges({ info }: { info: Record<string, unknown> }
   const parts: string[] = [];
   const osVal = resolveDisplayValue(info.os);
   if (osVal) parts.push(osVal);
-  const archVal = resolveDisplayValue(info.arch);
-  if (archVal) parts.push(archVal);
   const nameVal = resolveDisplayValue(info.name);
   if (nameVal) parts.push(nameVal);
+  const fridaVal = typeof info.frida === "string" ? info.frida : "";
+  if (fridaVal) parts.push(`Frida ${fridaVal}`);
 
   useEffect(() => {
     if (!open) return;
@@ -82,15 +82,11 @@ export default function DeviceBadges({ info }: { info: Record<string, unknown> }
             {p}
           </span>
         ))}
-        <i
-          className="fa-solid fa-circle-info"
-          style={{ fontSize: 9, color: "var(--text-muted)", marginLeft: 2 }}
-        />
       </button>
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-1 rounded-lg border shadow-lg p-3 z-[100] min-w-[260px] max-w-[360px]"
+          className="absolute right-0 top-full mt-1 rounded-lg border shadow-lg p-3 z-[100] min-w-[360px] max-w-[480px]"
           style={{
             background: "var(--bg-primary)",
             borderColor: "var(--border)",

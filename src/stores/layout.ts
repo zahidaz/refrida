@@ -14,6 +14,7 @@ interface LayoutState {
   aboutOpen: boolean;
   welcomeOpen: boolean;
   templateBrowserOpen: boolean;
+  serverInfoOpen: boolean;
   setActiveActivity: (activity: Activity) => void;
   toggleActivity: (activity: Activity) => void;
   setSidePanelVisible: (v: boolean) => void;
@@ -27,6 +28,7 @@ interface LayoutState {
   setAboutOpen: (v: boolean) => void;
   setWelcomeOpen: (v: boolean) => void;
   setTemplateBrowserOpen: (v: boolean) => void;
+  setServerInfoOpen: (v: boolean) => void;
 }
 
 export const useLayoutStore = create<LayoutState>((set, get) => ({
@@ -40,6 +42,7 @@ export const useLayoutStore = create<LayoutState>((set, get) => ({
   aboutOpen: false,
   welcomeOpen: getItem("refrida-welcome-open", true),
   templateBrowserOpen: false,
+  serverInfoOpen: false,
 
   setActiveActivity: (activeActivity) => set({ activeActivity }),
 
@@ -91,4 +94,5 @@ export const useLayoutStore = create<LayoutState>((set, get) => ({
     set({ welcomeOpen });
     setItem("refrida-welcome-open", welcomeOpen);
   },
+  setServerInfoOpen: (serverInfoOpen) => set({ serverInfoOpen }),
 }));

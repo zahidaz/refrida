@@ -36,7 +36,7 @@ export default function MenuBar({ editorRef, onSave }: Props) {
     setScriptRuntime,
   } = useSessionStore();
   const { toggle: toggleTheme } = useThemeStore();
-  const { toggleSidePanel, toggleBottomPanel, setCommandPaletteOpen, setAboutOpen, setWelcomeOpen, setTemplateBrowserOpen } =
+  const { toggleSidePanel, toggleBottomPanel, setCommandPaletteOpen, setAboutOpen, setWelcomeOpen, setTemplateBrowserOpen, setServerInfoOpen } =
     useLayoutStore();
 
   useEffect(() => {
@@ -211,6 +211,13 @@ export default function MenuBar({ editorRef, onSave }: Props) {
         action: () => {
           close();
           setWelcomeOpen(true);
+        },
+      },
+      {
+        label: "Server Info",
+        action: () => {
+          close();
+          setServerInfoOpen(true);
         },
       },
       { label: "", separator: true },

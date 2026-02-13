@@ -7,6 +7,7 @@ import CommandPalette from "@/components/layout/CommandPalette.tsx";
 import ConnectionDialog from "@/components/connection/ConnectionDialog.tsx";
 import ProcessPicker from "@/components/connection/ProcessPicker.tsx";
 import AboutDialog from "@/components/layout/AboutDialog.tsx";
+import ServerInfoDialog from "@/components/layout/ServerInfoDialog.tsx";
 import WelcomeScreen from "@/components/layout/WelcomeScreen.tsx";
 import SaveDialog from "@/components/ui/SaveDialog.tsx";
 import TemplateBrowser from "@/components/ui/TemplateBrowser.tsx";
@@ -49,6 +50,7 @@ export default function App() {
   const aboutOpen = useLayoutStore((s) => s.aboutOpen);
   const welcomeOpen = useLayoutStore((s) => s.welcomeOpen);
   const templateBrowserOpen = useLayoutStore((s) => s.templateBrowserOpen);
+  const serverInfoOpen = useLayoutStore((s) => s.serverInfoOpen);
   const setWelcomeOpen = useLayoutStore((s) => s.setWelcomeOpen);
 
   const sideResize = useResizable(
@@ -250,6 +252,7 @@ export default function App() {
       {connectionDialogOpen && <ConnectionDialog />}
       {processPickerOpen && <ProcessPicker />}
       {aboutOpen && <AboutDialog />}
+      {serverInfoOpen && <ServerInfoDialog />}
       {saveDialogOpen && (
         <SaveDialog
           defaultName={useScriptsStore.getState().getActiveTab()?.name ?? ""}
