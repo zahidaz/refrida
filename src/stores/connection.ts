@@ -131,6 +131,25 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
         try {
           const params = await client.querySystemParameters();
           set({ deviceInfo: params });
+          const os = params.os as Record<string, unknown> | undefined;
+          const osName = os?.name ?? os?.id ?? params.platform ?? "";
+          const osVersion = os?.version ?? "";
+          const arch = params.arch ?? "";
+          const parts = [osName, osVersion, arch].filter(Boolean);
+          if (parts.length > 0) {
+            append(`Device: ${parts.join(" ")}`, "system");
+          }
+          const fridaVersion = params.frida as string | undefined;
+          if (fridaVersion) {
+            append(`Frida server: v${fridaVersion}`, "system");
+            const [major, minor] = fridaVersion.split(".").map(Number);
+            if (major < 16 || (major === 16 && minor < 6)) {
+              append(
+                `Warning: reFrida requires frida-server >= 16.6.0 (found ${fridaVersion}). Some features may not work.`,
+                "error",
+              );
+            }
+          }
         } catch {}
 
         const processes = await client.enumerateProcesses();

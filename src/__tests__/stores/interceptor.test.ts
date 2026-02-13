@@ -26,7 +26,7 @@ describe("interceptor store", () => {
         exportName: "malloc",
       });
       const code = useInterceptorStore.getState().generateCode();
-      expect(code).toContain('Module.findExportByName("libc.so", "malloc")');
+      expect(code).toContain('Process.getModuleByName("libc.so").findExportByName("malloc")');
       expect(code).toContain("Interceptor.attach");
     });
 
@@ -46,7 +46,7 @@ describe("interceptor store", () => {
         exportName: "open",
       });
       const code = useInterceptorStore.getState().generateCode();
-      expect(code).toContain('Module.findExportByName(null, "open")');
+      expect(code).toContain('Module.findGlobalExportByName("open")');
     });
 
     it("includes onEnter with args logging", () => {

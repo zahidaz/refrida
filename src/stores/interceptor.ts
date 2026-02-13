@@ -42,10 +42,10 @@ function buildTargetExpr(target: HookTarget): string {
     return `ptr("${escapeStr(target.address)}")`;
   }
   if (target.moduleName && target.exportName) {
-    return `Module.findExportByName("${escapeStr(target.moduleName)}", "${escapeStr(target.exportName)}")`;
+    return `Process.getModuleByName("${escapeStr(target.moduleName)}").findExportByName("${escapeStr(target.exportName)}")`;
   }
   if (target.exportName) {
-    return `Module.findExportByName(null, "${escapeStr(target.exportName)}")`;
+    return `Module.findGlobalExportByName("${escapeStr(target.exportName)}")`;
   }
   return `ptr("0x0")`;
 }

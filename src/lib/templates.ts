@@ -9,7 +9,7 @@ send("Page size: " + Process.pageSize);`,
   },
   "hook-native": {
     label: "Hook Native Function",
-    code: `const addr = Module.findExportByName(null, "open");
+    code: `const addr = Module.findGlobalExportByName("open");
 if (addr) {
   Interceptor.attach(addr, {
     onEnter(args) {
@@ -63,7 +63,7 @@ send("Stalker tracing thread " + mainThread.id + "...");`,
     });
     send("Hooked: " + match.name);
   });
-  var SSLSetSessionOption = Module.findExportByName(null, "SSLSetSessionOption");
+  var SSLSetSessionOption = Module.findGlobalExportByName("SSLSetSessionOption");
   if (SSLSetSessionOption) {
     Interceptor.attach(SSLSetSessionOption, {
       onEnter: function(args) { args[1] = ptr(0); },
@@ -145,7 +145,7 @@ send("Stalker tracing thread " + mainThread.id + "...");`,
   },
   "anti-debug": {
     label: "Anti-Debug Bypass",
-    code: `var ptrace = Module.findExportByName(null, "ptrace");
+    code: `var ptrace = Module.findGlobalExportByName("ptrace");
 if (ptrace) {
   Interceptor.attach(ptrace, {
     onEnter: function(args) {
@@ -160,7 +160,7 @@ if (ptrace) {
   });
   send("ptrace hooked");
 }
-var sysctl = Module.findExportByName(null, "sysctl");
+var sysctl = Module.findGlobalExportByName("sysctl");
 if (sysctl) {
   Interceptor.attach(sysctl, {
     onEnter: function(args) { this.mib = args[0]; this.old = args[2]; },
@@ -180,7 +180,7 @@ if (sysctl) {
   });
   send("sysctl hooked");
 }
-var getppid = Module.findExportByName(null, "getppid");
+var getppid = Module.findGlobalExportByName("getppid");
 if (getppid) {
   Interceptor.replace(getppid, new NativeCallback(function() { return 1; }, "int", []));
   send("getppid spoofed to 1");
@@ -190,27 +190,22 @@ send("Anti-debug bypass active");`,
   "crypto-trace": {
     label: "Crypto Function Tracer",
     code: `var hooks = [
-  { lib: null, name: "CCCrypt" },
-  { lib: null, name: "CC_MD5" },
-  { lib: null, name: "CC_SHA1" },
-  { lib: null, name: "CC_SHA256" },
-  { lib: null, name: "EVP_EncryptInit_ex" },
-  { lib: null, name: "EVP_DecryptInit_ex" },
-  { lib: null, name: "AES_encrypt" },
-  { lib: null, name: "AES_decrypt" },
+  "CCCrypt", "CC_MD5", "CC_SHA1", "CC_SHA256",
+  "EVP_EncryptInit_ex", "EVP_DecryptInit_ex",
+  "AES_encrypt", "AES_decrypt",
 ];
-hooks.forEach(function(h) {
-  var addr = Module.findExportByName(h.lib, h.name);
+hooks.forEach(function(name) {
+  var addr = Module.findGlobalExportByName(name);
   if (addr) {
     Interceptor.attach(addr, {
       onEnter: function(args) {
         send({
-          func: h.name,
+          func: name,
           caller: Thread.backtrace(this.context, Backtracer.ACCURATE).map(DebugSymbol.fromAddress).join("\\n"),
         });
       }
     });
-    send("Hooked " + h.name);
+    send("Hooked " + name);
   }
 });
 send("Crypto tracer active");`,
@@ -218,7 +213,7 @@ send("Crypto tracer active");`,
   "network-trace": {
     label: "Network Calls Tracer",
     code: `["connect", "send", "recv", "sendto", "recvfrom", "SSL_read", "SSL_write"].forEach(function(name) {
-  var addr = Module.findExportByName(null, name);
+  var addr = Module.findGlobalExportByName(name);
   if (addr) {
     Interceptor.attach(addr, {
       onEnter: function(args) {
@@ -252,8 +247,8 @@ send("Network tracer active");`,
     "/private/var/lib/apt/",
     "/usr/bin/ssh",
   ];
-  var access = Module.findExportByName(null, "access");
-  var stat = Module.findExportByName(null, "stat");
+  var access = Module.findGlobalExportByName("access");
+  var stat = Module.findGlobalExportByName("stat");
   [access, stat].filter(Boolean).forEach(function(addr) {
     Interceptor.attach(addr, {
       onEnter: function(args) {
@@ -283,7 +278,7 @@ send("Network tracer active");`,
       if (this.bypass) retval.replace(ptr(0));
     }
   });
-  var forkAddr = Module.findExportByName(null, "fork");
+  var forkAddr = Module.findGlobalExportByName("fork");
   if (forkAddr) {
     Interceptor.replace(forkAddr, new NativeCallback(function() { return -1; }, "int", []));
     send("fork() disabled");
@@ -344,7 +339,7 @@ send("Network tracer active");`,
   query.setObject_forKey_(ObjC.classes.__NSCFString.alloc().initWithString_("m_LimitAll"), ObjC.classes.__NSCFString.alloc().initWithString_("m_Limit"));
   query.setObject_forKey_(ObjC.classes.__NSCFBoolean.numberWithBool_(true), ObjC.classes.__NSCFString.alloc().initWithString_("r_Attributes"));
   var SecItemCopyMatching = new NativeFunction(
-    Module.findExportByName("Security", "SecItemCopyMatching"), "int", ["pointer", "pointer"]
+    Process.getModuleByName("Security").findExportByName("SecItemCopyMatching"), "int", ["pointer", "pointer"]
   );
   var resultPtr = Memory.alloc(Process.pointerSize);
   var status = SecItemCopyMatching(query.handle, resultPtr);
@@ -395,7 +390,7 @@ send("Network tracer active");`,
   },
   "backtrace": {
     label: "Function Call Backtrace",
-    code: `var targetFunc = Module.findExportByName(null, "malloc");
+    code: `var targetFunc = Module.findGlobalExportByName("malloc");
 if (targetFunc) {
   Interceptor.attach(targetFunc, {
     onEnter: function(args) {

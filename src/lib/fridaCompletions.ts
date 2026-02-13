@@ -38,7 +38,7 @@ export function getFridaCompletions(): Partial<Suggestion>[] {
     prop("Process.mainModule", "Main module"),
 
     cls("Module", "Module operations"),
-    fn("Module.findExportByName(module, name)", "Find export address", "Module.findExportByName(${1:null}, ${2:\"name\"})"),
+    fn("Module.findGlobalExportByName(name)", "Find global export address", "Module.findGlobalExportByName(${1:\"name\"})"),
     fn("Module.findBaseAddress(name)", "Find module base", "Module.findBaseAddress(${1:\"name\"})"),
 
     cls("Memory", "Memory operations"),

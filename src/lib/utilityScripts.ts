@@ -300,7 +300,7 @@ try {
   var hooks = [];
   function tryHook(name, cb) {
     try {
-      var addr = Module.findExportByName(null, name);
+      var addr = Module.findGlobalExportByName(name);
       if (addr) { hooks.push(Interceptor.attach(addr, cb)); }
     } catch(e) {}
   }
@@ -375,7 +375,7 @@ try {
   var hooks = [];
   function tryHook(name, cb) {
     try {
-      var addr = Module.findExportByName(null, name);
+      var addr = Module.findGlobalExportByName(name);
       if (addr) { hooks.push(Interceptor.attach(addr, cb)); }
     } catch(e) {}
   }
@@ -589,8 +589,9 @@ try {
   }
 
   if (platform === "windows") {
-    var getEnvW = Module.findExportByName("kernel32.dll", "GetEnvironmentStringsW");
-    var freeEnvW = Module.findExportByName("kernel32.dll", "FreeEnvironmentStringsW");
+    var kernel32 = Process.findModuleByName("kernel32.dll");
+    var getEnvW = kernel32 ? kernel32.findExportByName("GetEnvironmentStringsW") : null;
+    var freeEnvW = kernel32 ? kernel32.findExportByName("FreeEnvironmentStringsW") : null;
     if (getEnvW && freeEnvW) {
       var GetEnvironmentStringsW = new NativeFunction(getEnvW, "pointer", []);
       var FreeEnvironmentStringsW = new NativeFunction(freeEnvW, "int", ["pointer"]);
@@ -624,7 +625,7 @@ try {
       }
     } catch(e4) {}
     if (!found) {
-      var nsGetEnviron = Module.findExportByName(null, "_NSGetEnviron");
+      var nsGetEnviron = Module.findGlobalExportByName("_NSGetEnviron");
       if (nsGetEnviron) {
         var getEnvironFn = new NativeFunction(nsGetEnviron, "pointer", []);
         var envpPtr = getEnvironFn();
@@ -638,9 +639,9 @@ try {
   if (!found) {
     var procEnv = null;
     try {
-      var openFn = new NativeFunction(Module.findExportByName(null, "fopen"), "pointer", ["pointer", "pointer"]);
-      var readFn = new NativeFunction(Module.findExportByName(null, "fread"), "int", ["pointer", "int", "int", "pointer"]);
-      var closeFn = new NativeFunction(Module.findExportByName(null, "fclose"), "int", ["pointer"]);
+      var openFn = new NativeFunction(Module.findGlobalExportByName("fopen"), "pointer", ["pointer", "pointer"]);
+      var readFn = new NativeFunction(Module.findGlobalExportByName("fread"), "int", ["pointer", "int", "int", "pointer"]);
+      var closeFn = new NativeFunction(Module.findGlobalExportByName("fclose"), "int", ["pointer"]);
       var pathBuf = Memory.allocUtf8String("/proc/self/environ");
       var modeBuf = Memory.allocUtf8String("r");
       var fp = openFn(pathBuf, modeBuf);
@@ -664,7 +665,7 @@ try {
   }
 
   if (!found) {
-    var environSym = Module.findExportByName(null, "environ");
+    var environSym = Module.findGlobalExportByName("environ");
     if (environSym) {
       readEnvironPointer(environSym.readPointer());
     }
