@@ -127,35 +127,47 @@ export default function TabBar({ editorRef, onRun }: Props) {
       </div>
 
       <div className="flex items-center gap-1 px-2 shrink-0">
-        <button
-          onClick={onRun}
-          disabled={!sessionActive}
-          className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded disabled:opacity-30"
-          style={{
-            color: "white",
-            background: scriptActive ? "var(--accent)" : "#16a34a",
-          }}
-          title={scriptActive ? "Re-run (Ctrl+Enter)" : "Run (Ctrl+Enter)"}
-        >
-          <i
-            className={`fa-solid ${scriptActive ? "fa-rotate-right" : "fa-play"}`}
-            style={{ fontSize: 9 }}
-          />
-          {scriptActive ? "Re-run" : "Run"}
-        </button>
-
-        {scriptActive && (
+        {scriptActive ? (
+          <>
+            <button
+              onClick={unloadScript}
+              className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded"
+              style={{
+                color: "#ef4444",
+                border: "1px solid rgba(239, 68, 68, 0.25)",
+              }}
+              title="Stop Script"
+            >
+              <i className="fa-solid fa-stop" style={{ fontSize: 8 }} />
+              Stop
+            </button>
+            <button
+              onClick={onRun}
+              className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded"
+              style={{
+                color: "var(--accent-text)",
+                border: "1px solid var(--accent)",
+                background: "var(--accent-soft)",
+              }}
+              title="Re-run (Ctrl+Enter)"
+            >
+              <i className="fa-solid fa-rotate-right" style={{ fontSize: 8 }} />
+              Re-run
+            </button>
+          </>
+        ) : (
           <button
-            onClick={unloadScript}
-            className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded"
+            onClick={onRun}
+            disabled={!sessionActive}
+            className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded disabled:opacity-30"
             style={{
-              color: "#ef4444",
-              border: "1px solid rgba(239, 68, 68, 0.25)",
+              color: "white",
+              background: "#16a34a",
             }}
-            title="Stop Script"
+            title="Run (Ctrl+Enter)"
           >
-            <i className="fa-solid fa-stop" style={{ fontSize: 8 }} />
-            Stop
+            <i className="fa-solid fa-play" style={{ fontSize: 9 }} />
+            Run
           </button>
         )}
       </div>
