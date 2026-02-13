@@ -4,6 +4,12 @@ import { getItem, setItem } from "@/lib/storage.ts";
 const TABS_KEY = "refrida-tabs";
 const SCRIPTS_KEY = "refrida-scripts";
 
+const STARTER_CODE = `send("Hello from Frida!");
+
+Process.enumerateModules().slice(0, 10).forEach(m => {
+  send({ name: m.name, base: m.base.toString(), size: m.size });
+});`;
+
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
@@ -44,7 +50,7 @@ interface ScriptsState {
 }
 
 export const useScriptsStore = create<ScriptsState>((set, get) => ({
-  tabs: [{ id: generateId(), name: "Script 1", content: "" }],
+  tabs: [{ id: generateId(), name: "Script 1", content: STARTER_CODE }],
   activeTabId: "",
   savedScripts: [],
 
@@ -58,7 +64,7 @@ export const useScriptsStore = create<ScriptsState>((set, get) => ({
     } else {
       const id = generateId();
       set({
-        tabs: [{ id, name: "Script 1", content: "" }],
+        tabs: [{ id, name: "Script 1", content: STARTER_CODE }],
         activeTabId: id,
       });
     }

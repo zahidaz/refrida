@@ -8,7 +8,7 @@ interface ThemeState {
 function getInitialTheme(): boolean {
   const saved = localStorage.getItem("refrida-theme");
   if (saved) return saved === "dark";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  return false;
 }
 
 export const useThemeStore = create<ThemeState>((set) => ({

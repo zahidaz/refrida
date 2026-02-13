@@ -13,6 +13,7 @@ interface LayoutState {
   connectionDialogOpen: boolean;
   processPickerOpen: boolean;
   aboutOpen: boolean;
+  welcomeOpen: boolean;
   setActiveActivity: (activity: Activity) => void;
   toggleActivity: (activity: Activity) => void;
   setSidePanelVisible: (v: boolean) => void;
@@ -25,11 +26,12 @@ interface LayoutState {
   setConnectionDialogOpen: (v: boolean) => void;
   setProcessPickerOpen: (v: boolean) => void;
   setAboutOpen: (v: boolean) => void;
+  setWelcomeOpen: (v: boolean) => void;
 }
 
 export const useLayoutStore = create<LayoutState>((set, get) => ({
   activeActivity: "scripts",
-  sidePanelVisible: getItem("refrida-side-panel-visible", true),
+  sidePanelVisible: getItem("refrida-side-panel-visible", false),
   sidePanelWidth: getItem("refrida-side-panel-width", 300),
   bottomPanelVisible: getItem("refrida-bottom-panel-visible", true),
   bottomPanelHeight: getItem("refrida-bottom-panel-height", 45),
@@ -37,6 +39,7 @@ export const useLayoutStore = create<LayoutState>((set, get) => ({
   connectionDialogOpen: false,
   processPickerOpen: false,
   aboutOpen: false,
+  welcomeOpen: getItem("refrida-welcome-open", true),
 
   setActiveActivity: (activeActivity) => set({ activeActivity }),
 
@@ -88,4 +91,8 @@ export const useLayoutStore = create<LayoutState>((set, get) => ({
     set({ connectionDialogOpen }),
   setProcessPickerOpen: (processPickerOpen) => set({ processPickerOpen }),
   setAboutOpen: (aboutOpen) => set({ aboutOpen }),
+  setWelcomeOpen: (welcomeOpen) => {
+    set({ welcomeOpen });
+    setItem("refrida-welcome-open", welcomeOpen);
+  },
 }));

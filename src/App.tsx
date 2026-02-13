@@ -7,6 +7,7 @@ import CommandPalette from "@/components/layout/CommandPalette.tsx";
 import ConnectionDialog from "@/components/connection/ConnectionDialog.tsx";
 import ProcessPicker from "@/components/connection/ProcessPicker.tsx";
 import AboutDialog from "@/components/layout/AboutDialog.tsx";
+import WelcomeScreen from "@/components/layout/WelcomeScreen.tsx";
 import ScriptEditor from "@/components/editor/ScriptEditor.tsx";
 import type { MonacoEditor } from "@/components/editor/ScriptEditor.tsx";
 import TabBar from "@/components/editor/TabBar.tsx";
@@ -32,6 +33,8 @@ export default function App() {
   const connectionDialogOpen = useLayoutStore((s) => s.connectionDialogOpen);
   const processPickerOpen = useLayoutStore((s) => s.processPickerOpen);
   const aboutOpen = useLayoutStore((s) => s.aboutOpen);
+  const welcomeOpen = useLayoutStore((s) => s.welcomeOpen);
+  const setWelcomeOpen = useLayoutStore((s) => s.setWelcomeOpen);
 
   const sideResize = useResizable(
     "refrida-side-panel-width",
@@ -55,11 +58,12 @@ export default function App() {
   const runScript = useSessionStore((s) => s.runScript);
 
   const handleRun = useCallback(() => {
+    if (welcomeOpen) setWelcomeOpen(false);
     const source = editorRef.current?.getValue() ?? "";
     const tab = useScriptsStore.getState().getActiveTab();
     runScript(source, tab?.name);
     if (!bottomPanelVisible) setBottomPanelVisible(true);
-  }, [runScript, bottomPanelVisible, setBottomPanelVisible]);
+  }, [runScript, bottomPanelVisible, setBottomPanelVisible, welcomeOpen, setWelcomeOpen]);
 
   const handleEditorLoad = useCallback((text: string) => {
     editorRef.current?.setValue(text);
@@ -145,10 +149,19 @@ export default function App() {
           >
             <TabBar editorRef={editorRef} onRun={handleRun} />
             <div className="flex-1 overflow-hidden">
-              <ScriptEditor
-                editorRef={editorRef}
-                onCursorChange={handleCursorChange}
-              />
+              {welcomeOpen ? (
+                <WelcomeScreen
+                  onLoadScript={(code) => {
+                    handleEditorLoad(code);
+                    setWelcomeOpen(false);
+                  }}
+                />
+              ) : (
+                <ScriptEditor
+                  editorRef={editorRef}
+                  onCursorChange={handleCursorChange}
+                />
+              )}
             </div>
           </div>
 
