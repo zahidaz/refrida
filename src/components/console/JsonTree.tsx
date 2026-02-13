@@ -53,7 +53,11 @@ function JsonTreeNode({
     >
       <span
         className="json-toggle cursor-pointer select-none"
+        role="button"
+        tabIndex={0}
+        aria-expanded={!collapsed}
         onClick={() => setCollapsed(!collapsed)}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCollapsed(!collapsed); } }}
       >
         <span
           className="inline-block w-3 text-[10px] mr-0.5"
