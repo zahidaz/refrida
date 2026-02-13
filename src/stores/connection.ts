@@ -133,8 +133,9 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
           set({ deviceInfo: params });
           const os = params.os as Record<string, unknown> | undefined;
           const osName = os?.name ?? os?.id ?? params.platform ?? "";
-          const osVersion = os?.version ?? "";
-          const arch = params.arch ?? "";
+          const rawVersion = os?.version;
+          const osVersion = typeof rawVersion === "string" ? rawVersion : "";
+          const arch = typeof params.arch === "string" ? params.arch : "";
           const parts = [osName, osVersion, arch].filter(Boolean);
           if (parts.length > 0) {
             append(`Device: ${parts.join(" ")}`, "system");

@@ -16,19 +16,32 @@ function resolveDisplayValue(value: unknown): string {
   return "";
 }
 
-function formatValue(value: unknown): string {
-  if (value === null || value === undefined) return "—";
-  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-    return String(value);
+interface FlatEntry {
+  label: string;
+  value: string;
+}
+
+function flattenInfo(info: Record<string, unknown>): FlatEntry[] {
+  const result: FlatEntry[] = [];
+  for (const [key, val] of Object.entries(info)) {
+    if (key === "icon" || key === "id") continue;
+    if (val === null || val === undefined) continue;
+    if (typeof val === "object" && !Array.isArray(val)) {
+      const obj = val as Record<string, unknown>;
+      for (const [subKey, subVal] of Object.entries(obj)) {
+        if (subVal === null || subVal === undefined) continue;
+        const flatVal = typeof subVal === "object"
+          ? JSON.stringify(subVal)
+          : String(subVal);
+        result.push({ label: `${key}.${subKey}`, value: flatVal });
+      }
+    } else if (Array.isArray(val)) {
+      result.push({ label: key, value: val.join(", ") });
+    } else {
+      result.push({ label: key, value: String(val) });
+    }
   }
-  if (typeof value === "object") {
-    const obj = value as Record<string, unknown>;
-    const parts = Object.entries(obj)
-      .map(([k, v]) => `${k}: ${v}`)
-      .join(", ");
-    return parts || "—";
-  }
-  return String(value);
+  return result;
 }
 
 export default function DeviceBadges({ info }: { info: Record<string, unknown> }) {
@@ -55,9 +68,7 @@ export default function DeviceBadges({ info }: { info: Record<string, unknown> }
 
   if (parts.length === 0) return null;
 
-  const entries = Object.entries(info).filter(
-    ([k]) => !["icon", "id"].includes(k),
-  );
+  const entries = flattenInfo(info);
 
   return (
     <div className="relative" ref={ref}>
@@ -92,19 +103,19 @@ export default function DeviceBadges({ info }: { info: Record<string, unknown> }
             Server Information
           </div>
           <div className="flex flex-col gap-1">
-            {entries.map(([key, value]) => (
-              <div key={key} className="flex items-start gap-2 text-[11px]">
+            {entries.map((entry) => (
+              <div key={entry.label} className="flex items-start gap-2 text-[11px]">
                 <span
-                  className="shrink-0 w-20 text-right"
+                  className="shrink-0 min-w-[80px] text-right"
                   style={{ color: "var(--text-muted)" }}
                 >
-                  {key}
+                  {entry.label}
                 </span>
                 <span
                   className="break-all"
                   style={{ color: "var(--text-secondary)" }}
                 >
-                  {formatValue(value)}
+                  {entry.value}
                 </span>
               </div>
             ))}
