@@ -158,6 +158,18 @@ export default function TabBar({ editorRef, onRun }: Props) {
                 style={{ fontSize: 9, color: "var(--text-muted)", marginRight: 4 }}
               />
             )}
+            {tab.type === "process" && (
+              <i
+                className="fa-solid fa-circle-info"
+                style={{ fontSize: 9, color: "var(--text-muted)", marginRight: 4 }}
+              />
+            )}
+            {tab.type === "filescan" && (
+              <i
+                className="fa-solid fa-magnifying-glass"
+                style={{ fontSize: 9, color: "var(--text-muted)", marginRight: 4 }}
+              />
+            )}
             {editingId === tab.id ? (
               <input
                 ref={inputRef}

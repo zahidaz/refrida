@@ -14,7 +14,7 @@ function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
 
-export type TabType = "code" | "hex" | "asm";
+export type TabType = "code" | "hex" | "asm" | "process" | "filescan";
 
 export type ScriptLanguage = "javascript" | "typescript";
 
@@ -55,6 +55,8 @@ interface ScriptsState {
   openInNewTab: (name: string, content: string, getCurrentContent: () => string) => void;
   openHexTab: (address: string, getCurrentContent: () => string) => void;
   openAsmTab: (address: string, getCurrentContent: () => string) => void;
+  openProcessTab: (getCurrentContent: () => string) => void;
+  openFileScanTab: (getCurrentContent: () => string) => void;
   reorderTabs: (fromId: string, toId: string) => void;
   updateTabContent: (content: string) => void;
   setTabLanguage: (id: string, language: ScriptLanguage) => void;
@@ -228,6 +230,42 @@ export const useScriptsStore = create<ScriptsState>((set, get) => ({
     const id = generateId();
     const label = address ? `ASM: ${address}` : "Disassembler";
     const newTab: ScriptTab = { id, name: label, type: "asm", content: "", address };
+    const newTabs = [...tabs, newTab];
+    set({ tabs: newTabs, activeTabId: id });
+    setItem(TABS_KEY, { tabs: newTabs, activeTabId: id });
+  },
+
+  openProcessTab: (getCurrentContent) => {
+    const state = get();
+    const existing = state.tabs.find((t) => t.type === "process");
+    if (existing) {
+      return get().switchTab(existing.id, getCurrentContent);
+    }
+    const tabs = state.tabs.map((t) =>
+      t.id === state.activeTabId && t.type === "code"
+        ? { ...t, content: getCurrentContent() }
+        : t,
+    );
+    const id = generateId();
+    const newTab: ScriptTab = { id, name: "Process Info", type: "process", content: "" };
+    const newTabs = [...tabs, newTab];
+    set({ tabs: newTabs, activeTabId: id });
+    setItem(TABS_KEY, { tabs: newTabs, activeTabId: id });
+  },
+
+  openFileScanTab: (getCurrentContent) => {
+    const state = get();
+    const existing = state.tabs.find((t) => t.type === "filescan");
+    if (existing) {
+      return get().switchTab(existing.id, getCurrentContent);
+    }
+    const tabs = state.tabs.map((t) =>
+      t.id === state.activeTabId && t.type === "code"
+        ? { ...t, content: getCurrentContent() }
+        : t,
+    );
+    const id = generateId();
+    const newTab: ScriptTab = { id, name: "File Scanner", type: "filescan", content: "" };
     const newTabs = [...tabs, newTab];
     set({ tabs: newTabs, activeTabId: id });
     setItem(TABS_KEY, { tabs: newTabs, activeTabId: id });

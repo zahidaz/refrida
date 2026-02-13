@@ -157,6 +157,21 @@ export default function MenuBar({ editorRef, onSave }: Props) {
       },
       { label: "", separator: true },
       {
+        label: "Process Info",
+        action: () => {
+          close();
+          useScriptsStore.getState().openProcessTab(() => editorRef.current?.getValue() ?? "");
+        },
+      },
+      {
+        label: "File Scanner",
+        action: () => {
+          close();
+          useScriptsStore.getState().openFileScanTab(() => editorRef.current?.getValue() ?? "");
+        },
+      },
+      { label: "", separator: true },
+      {
         label: "Toggle Side Panel",
         shortcut: "Ctrl+B",
         action: () => {

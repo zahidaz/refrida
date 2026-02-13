@@ -98,6 +98,25 @@ export default function CommandPalette({ onRun }: Props) {
       },
     ];
 
+    if (connected) {
+      items.push({
+        id: "open-process-info",
+        label: "Open Process Info",
+        action: () => {
+          close();
+          useScriptsStore.getState().openProcessTab(() => "");
+        },
+      });
+      items.push({
+        id: "open-file-scanner",
+        label: "Scan Memory for Files",
+        action: () => {
+          close();
+          useScriptsStore.getState().openFileScanTab(() => "");
+        },
+      });
+    }
+
     if (sessionActive) {
       items.push({
         id: "run-script",

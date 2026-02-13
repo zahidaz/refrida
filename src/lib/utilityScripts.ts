@@ -510,6 +510,195 @@ try {
 `;
 }
 
+export function processInfoScript(): string {
+  return `
+try {
+  var threads = Process.enumerateThreads();
+  var modules = Process.enumerateModules();
+  var ranges = Process.enumerateRanges("---");
+  var totalMapped = 0;
+  for (var i = 0; i < ranges.length; i++) totalMapped += ranges[i].size;
+  var mm = Process.mainModule;
+  send({
+    pid: Process.id,
+    arch: Process.arch,
+    platform: Process.platform,
+    pageSize: Process.pageSize,
+    pointerSize: Process.pointerSize,
+    mainModule: { name: mm.name, base: mm.base.toString(), size: mm.size, path: mm.path },
+    threadCount: threads.length,
+    moduleCount: modules.length,
+    rangeCount: ranges.length,
+    totalMappedSize: totalMapped,
+    currentThreadId: Process.getCurrentThreadId()
+  });
+} catch(e) {
+  send({ type: "__utility_error__", message: e.message || String(e) });
+}
+send({ type: "__done__" });
+`;
+}
+
+export function enumerateThreadsScript(): string {
+  return `
+try {
+  var threads = Process.enumerateThreads();
+  for (var i = 0; i < threads.length; i++) {
+    var t = threads[i];
+    var ctx = t.context;
+    send({
+      id: t.id,
+      state: t.state,
+      pc: ctx.pc ? ctx.pc.toString() : null,
+      sp: ctx.sp ? ctx.sp.toString() : null
+    });
+  }
+} catch(e) {
+  send({ type: "__utility_error__", message: e.message || String(e) });
+}
+send({ type: "__done__" });
+`;
+}
+
+export function enumerateEnvVarsScript(): string {
+  return `
+try {
+  var platform = Process.platform;
+  if (platform === "linux") {
+    var openFn = new NativeFunction(Module.findExportByName(null, "fopen"), "pointer", ["pointer", "pointer"]);
+    var readFn = new NativeFunction(Module.findExportByName(null, "fread"), "int", ["pointer", "int", "int", "pointer"]);
+    var closeFn = new NativeFunction(Module.findExportByName(null, "fclose"), "int", ["pointer"]);
+    var pathBuf = Memory.allocUtf8String("/proc/self/environ");
+    var modeBuf = Memory.allocUtf8String("r");
+    var fp = openFn(pathBuf, modeBuf);
+    if (!fp.isNull()) {
+      var buf = Memory.alloc(65536);
+      var n = readFn(buf, 1, 65536, fp);
+      closeFn(fp);
+      if (n > 0) {
+        var raw = buf.readByteArray(n);
+        var bytes = new Uint8Array(raw);
+        var str = "";
+        for (var i = 0; i < bytes.length; i++) str += String.fromCharCode(bytes[i]);
+        var pairs = str.split("\\0");
+        for (var j = 0; j < pairs.length; j++) {
+          var eq = pairs[j].indexOf("=");
+          if (eq > 0) {
+            send({ key: pairs[j].substring(0, eq), value: pairs[j].substring(eq + 1) });
+          }
+        }
+      }
+    }
+  } else {
+    var environ = Module.findExportByName(null, "environ");
+    if (environ) {
+      var envp = environ.readPointer();
+      var idx = 0;
+      while (true) {
+        var entry = envp.add(idx * Process.pointerSize).readPointer();
+        if (entry.isNull()) break;
+        var s = entry.readUtf8String();
+        if (s) {
+          var eq = s.indexOf("=");
+          if (eq > 0) {
+            send({ key: s.substring(0, eq), value: s.substring(eq + 1) });
+          }
+        }
+        idx++;
+        if (idx > 10000) break;
+      }
+    }
+  }
+} catch(e) {
+  send({ type: "__utility_error__", message: e.message || String(e) });
+}
+send({ type: "__done__" });
+`;
+}
+
+export function scanFileSignaturesScript(): string {
+  return `
+try {
+  var sigs = {
+    "PNG":    "89 50 4E 47 0D 0A 1A 0A",
+    "JPEG":   "FF D8 FF",
+    "GIF":    "47 49 46 38",
+    "PDF":    "25 50 44 46",
+    "ZIP":    "50 4B 03 04",
+    "ELF":    "7F 45 4C 46",
+    "MachO":  "CF FA ED FE",
+    "PE":     "4D 5A 90 00",
+    "SQLite": "53 51 4C 69 74 65",
+    "DEX":    "64 65 78 0A",
+    "BPLIST": "62 70 6C 69 73 74",
+    "PEM":    "2D 2D 2D 2D 2D 42 45 47 49 4E",
+    "GZIP":   "1F 8B 08",
+    "BZ2":    "42 5A 68",
+    "7Z":     "37 7A BC AF 27 1C",
+    "OGG":    "4F 67 67 53",
+    "FLAC":   "66 4C 61 43",
+    "RIFF":   "52 49 46 46"
+  };
+  var ranges = Process.enumerateRanges("r--");
+  var count = 0;
+  for (var i = 0; i < ranges.length; i++) {
+    var r = ranges[i];
+    if (r.size < 4 || r.size > 100 * 1024 * 1024) continue;
+    for (var sigName in sigs) {
+      try {
+        var matches = Memory.scanSync(r.base, r.size, sigs[sigName]);
+        for (var j = 0; j < matches.length; j++) {
+          var addr = matches[j].address;
+          var mod = null;
+          try { mod = Process.findModuleByAddress(addr); } catch(e) {}
+          send({
+            fileType: sigName,
+            address: addr.toString(),
+            module: mod ? mod.name : null,
+            offset: mod ? "0x" + addr.sub(mod.base).toString(16) : null
+          });
+          count++;
+          if (count > 5000) break;
+        }
+      } catch(e) {}
+      if (count > 5000) break;
+    }
+    if (count > 5000) break;
+  }
+} catch(e) {
+  send({ type: "__utility_error__", message: e.message || String(e) });
+}
+send({ type: "__done__" });
+`;
+}
+
+export function dumpFileFromMemoryScript(address: string, maxSize: number): string {
+  return `
+try {
+  var addr = ptr("${escapeStr(address)}");
+  var maxSz = ${maxSize};
+  var data = addr.readByteArray(maxSz);
+  if (data) {
+    var bytes = new Uint8Array(data);
+    var chunk = [];
+    for (var i = 0; i < bytes.length; i++) {
+      chunk.push(bytes[i]);
+      if (chunk.length >= 4096) {
+        send({ offset: i - chunk.length + 1, bytes: chunk });
+        chunk = [];
+      }
+    }
+    if (chunk.length > 0) {
+      send({ offset: bytes.length - chunk.length, bytes: chunk });
+    }
+  }
+} catch(e) {
+  send({ type: "__utility_error__", message: e.message || String(e) });
+}
+send({ type: "__done__" });
+`;
+}
+
 export function evalScript(code: string): string {
   return `
 try {

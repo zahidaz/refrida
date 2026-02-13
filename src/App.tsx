@@ -15,6 +15,8 @@ import ScriptEditor from "@/components/editor/ScriptEditor.tsx";
 import type { MonacoEditor } from "@/components/editor/ScriptEditor.tsx";
 import HexViewerTab from "@/components/editor/HexViewerTab.tsx";
 import DisassemblerTab from "@/components/editor/DisassemblerTab.tsx";
+import ProcessInfoTab from "@/components/editor/ProcessInfoTab.tsx";
+import FileScannerTab from "@/components/editor/FileScannerTab.tsx";
 import TabBar from "@/components/editor/TabBar.tsx";
 import ConsolePanel from "@/components/console/ConsolePanel.tsx";
 import { useResizable, useResizablePercent } from "@/hooks/useResizable.ts";
@@ -195,6 +197,10 @@ export default function App() {
                 <HexViewerTab tabId={activeTabId} />
               ) : activeTabType === "asm" ? (
                 <DisassemblerTab tabId={activeTabId} />
+              ) : activeTabType === "process" ? (
+                <ProcessInfoTab />
+              ) : activeTabType === "filescan" ? (
+                <FileScannerTab />
               ) : (
                 <ScriptEditor
                   editorRef={editorRef}
