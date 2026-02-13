@@ -14,23 +14,17 @@ export default function ConsoleLine({ line, index }: Props) {
 
   return (
     <div
-      className="flex items-start px-2 py-0.5 text-xs font-mono cursor-pointer group"
+      className="flex items-start px-2 py-0.5 text-xs font-mono cursor-pointer group hover-row"
       style={{ color: "var(--text-primary)" }}
-      onMouseEnter={(e) =>
-        (e.currentTarget.style.background = "var(--hover-bg)")
-      }
-      onMouseLeave={(e) =>
-        (e.currentTarget.style.background = "transparent")
-      }
       onClick={() => copyLine(line, index)}
     >
       <span
-        className="w-20 flex-shrink-0 select-none"
-        style={{ color: "var(--text-muted)" }}
+        className="flex-shrink-0 select-none mr-2"
+        style={{ color: "var(--text-muted)", minWidth: "5.5rem" }}
       >
         {line.timestamp}
       </span>
-      <div className={`flex-1 break-all ${consoleLineClass(line.level)}`}>
+      <div className={`flex-1 min-w-0 break-all ${consoleLineClass(line.level)}`}>
         {jsonData ? <JsonTree data={jsonData} /> : line.text}
       </div>
       {copiedIndex === index && (

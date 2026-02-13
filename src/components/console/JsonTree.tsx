@@ -35,7 +35,7 @@ function JsonTreeNode({
     return (
       <span className="json-leaf">
         {label && (
-          <span className="text-cyan-300 mr-1">{label}: </span>
+          <span className="text-orange-300 mr-1">{label}: </span>
         )}
         <span className={valClass}>{display}</span>
       </span>
@@ -61,7 +61,7 @@ function JsonTreeNode({
           {collapsed ? "\u25B6" : "\u25BC"}
         </span>
         {label && (
-          <span className="text-cyan-300 mr-1">{label}: </span>
+          <span className="text-orange-300 mr-1">{label}: </span>
         )}
         {collapsed && <span className="text-gray-500">{preview}</span>}
       </span>

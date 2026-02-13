@@ -1,4 +1,5 @@
-import { useConsoleStore, type LogLevel } from "@/stores/console.ts";
+import { useConsoleStore, getRunIds, type LogLevel } from "@/stores/console.ts";
+import { useLayoutStore } from "@/stores/layout.ts";
 
 const FILTERS: Array<{ label: string; value: LogLevel | "all" }> = [
   { label: "All", value: "all" },
@@ -9,17 +10,25 @@ const FILTERS: Array<{ label: string; value: LogLevel | "all" }> = [
 ];
 
 export default function ConsoleToolbar() {
+  const state = useConsoleStore();
   const {
     search,
     setSearch,
     filter,
     setFilter,
+    filterRunId,
+    setFilterRunId,
     exportFormat,
     setExportFormat,
     exportConsole,
     clear,
     lines,
-  } = useConsoleStore();
+  } = state;
+  const setBottomPanelVisible = useLayoutStore(
+    (s) => s.setBottomPanelVisible,
+  );
+
+  const runIds = getRunIds(state);
 
   return (
     <div
@@ -62,6 +71,28 @@ export default function ConsoleToolbar() {
         </button>
       ))}
 
+      {runIds.length > 1 && (
+        <select
+          value={filterRunId === null ? "all" : String(filterRunId)}
+          onChange={(e) =>
+            setFilterRunId(e.target.value === "all" ? null : Number(e.target.value))
+          }
+          className="text-[11px] px-1 py-0.5 rounded border outline-none"
+          style={{
+            background: "var(--bg-input)",
+            borderColor: filterRunId !== null ? "var(--accent)" : "var(--border)",
+            color: filterRunId !== null ? "var(--accent-text)" : "var(--text-primary)",
+          }}
+        >
+          <option value="all">All Runs</option>
+          {runIds.map((id) => (
+            <option key={id} value={String(id)}>
+              Run #{id}
+            </option>
+          ))}
+        </select>
+      )}
+
       <div className="flex-1" />
 
       <select
@@ -103,6 +134,15 @@ export default function ConsoleToolbar() {
         title="Clear (Ctrl+Shift+K)"
       >
         Clear
+      </button>
+
+      <button
+        onClick={() => setBottomPanelVisible(false)}
+        className="text-sm px-1 ml-1"
+        style={{ color: "var(--text-muted)" }}
+        title="Close Console"
+      >
+        <i className="fa-solid fa-xmark" />
       </button>
     </div>
   );

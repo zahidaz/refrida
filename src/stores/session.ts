@@ -13,11 +13,12 @@ interface SessionState {
   scriptActive: boolean;
   sessionInfoText: string;
   attachedPid: number | null;
+  attachedName: string;
   scriptRuntime: string;
   lastCrash: FridaCrash | null;
   setScriptRuntime: (r: string) => void;
   attachToProcess: (pid: number, name: string) => Promise<void>;
-  runScript: (source: string) => Promise<void>;
+  runScript: (source: string, scriptName?: string) => Promise<void>;
   unloadScript: () => Promise<void>;
   detachSession: () => Promise<void>;
   reset: () => void;
@@ -31,6 +32,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   scriptActive: false,
   sessionInfoText: "",
   attachedPid: null,
+  attachedName: "",
   scriptRuntime: "default",
   lastCrash: null,
 
@@ -70,6 +72,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
           sessionActive: false,
           scriptActive: false,
           attachedPid: null,
+          attachedName: "",
           sessionInfoText: "",
         });
         currentSession = null;
@@ -78,7 +81,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       set({
         sessionActive: true,
         attachedPid: pid,
-        sessionInfoText: `PID ${pid}`,
+        attachedName: name,
+        sessionInfoText: `${name} (PID ${pid})`,
         lastCrash: null,
       });
       append(`Attached to ${name} (PID ${pid})`, "system");
@@ -87,7 +91,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     }
   },
 
-  runScript: async (source) => {
+  runScript: async (source, scriptName) => {
     if (!currentSession || currentSession.isDetached) {
       useConsoleStore
         .getState()
@@ -142,7 +146,9 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       });
       await currentScript.load();
       set({ scriptActive: true });
-      append("Script loaded.", "system");
+      useConsoleStore.getState().bumpRunId();
+      const label = scriptName ? `Script loaded (${scriptName}).` : "Script loaded.";
+      append(label, "system");
     } catch (err) {
       append(`Script error: ${(err as Error).message}`, "error");
       currentScript = null;
@@ -179,6 +185,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     set({
       sessionActive: false,
       attachedPid: null,
+      attachedName: "",
       sessionInfoText: "",
     });
   },
@@ -198,6 +205,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       sessionActive: false,
       scriptActive: false,
       attachedPid: null,
+      attachedName: "",
       sessionInfoText: "",
       lastCrash: null,
     });

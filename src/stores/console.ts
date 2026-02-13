@@ -6,15 +6,20 @@ export interface ConsoleLine {
   text: string;
   level: LogLevel;
   timestamp: string;
+  runId: number;
 }
 
 interface ConsoleState {
   lines: ConsoleLine[];
   search: string;
   filter: LogLevel | "all";
+  filterRunId: number | null;
+  currentRunId: number;
   exportFormat: "txt" | "json" | "csv";
   copiedIndex: number | null;
   append: (text: string, level?: LogLevel) => void;
+  bumpRunId: () => void;
+  setFilterRunId: (id: number | null) => void;
   clear: () => void;
   setSearch: (q: string) => void;
   setFilter: (f: LogLevel | "all") => void;
@@ -38,15 +43,22 @@ export const useConsoleStore = create<ConsoleState>((set, get) => ({
   lines: [],
   search: "",
   filter: "all",
+  filterRunId: null,
+  currentRunId: 0,
   exportFormat: "txt",
   copiedIndex: null,
 
   append: (text, level = "info") =>
     set((state) => ({
-      lines: [...state.lines, { text, level, timestamp: formatTimestamp() }],
+      lines: [...state.lines, { text, level, timestamp: formatTimestamp(), runId: state.currentRunId }],
     })),
 
-  clear: () => set({ lines: [] }),
+  bumpRunId: () =>
+    set((state) => ({ currentRunId: state.currentRunId + 1 })),
+
+  setFilterRunId: (filterRunId) => set({ filterRunId }),
+
+  clear: () => set({ lines: [], filterRunId: null }),
   setSearch: (search) => set({ search }),
   setFilter: (filter) => set({ filter }),
   setExportFormat: (exportFormat) => set({ exportFormat }),
@@ -98,7 +110,7 @@ export const useConsoleStore = create<ConsoleState>((set, get) => ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `frida-console-${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.${ext}`;
+    a.download = `refrida-console-${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.${ext}`;
     a.click();
     URL.revokeObjectURL(url);
     append(`Exported ${lines.length} lines as ${ext}.`, "system");
@@ -107,6 +119,9 @@ export const useConsoleStore = create<ConsoleState>((set, get) => ({
 
 export function getFilteredLines(state: ConsoleState): ConsoleLine[] {
   let result = state.lines;
+  if (state.filterRunId !== null) {
+    result = result.filter((l) => l.runId === state.filterRunId);
+  }
   if (state.filter !== "all") {
     result = result.filter((l) => l.level === state.filter);
   }
@@ -117,11 +132,19 @@ export function getFilteredLines(state: ConsoleState): ConsoleLine[] {
   return result;
 }
 
+export function getRunIds(state: ConsoleState): number[] {
+  const ids = new Set<number>();
+  for (const line of state.lines) {
+    ids.add(line.runId);
+  }
+  return Array.from(ids).sort((a, b) => b - a);
+}
+
 export function consoleLineClass(level: LogLevel): string {
   const map: Record<string, string> = {
     warning: "text-amber-600 dark:text-amber-400",
     error: "text-red-600 dark:text-red-400",
-    system: "text-cyan-600 dark:text-cyan-400",
+    system: "text-orange-600 dark:text-orange-400",
   };
   return map[level] || "text-gray-800 dark:text-gray-200";
 }

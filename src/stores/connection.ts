@@ -35,25 +35,62 @@ interface ConnectionState {
 
 let client: FridaClient | null = null;
 
+function readUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    host: params.get("host"),
+    tls: params.get("tls"),
+    token: params.get("token"),
+  };
+}
+
+function syncUrlParams(host: string, tls: string, token: string) {
+  const params = new URLSearchParams();
+  if (host && host !== "127.0.0.1:27042") params.set("host", host);
+  if (tls && tls !== "disabled") params.set("tls", tls);
+  if (token) params.set("token", token);
+  const qs = params.toString();
+  const url = qs
+    ? `${window.location.pathname}?${qs}`
+    : window.location.pathname;
+  window.history.replaceState(null, "", url);
+}
+
 export const useConnectionStore = create<ConnectionState>((set, get) => {
-  const saved = getItem<ConnectionSettings>("frida-web-settings", {
+  const saved = getItem<ConnectionSettings>("refrida-settings", {
     serverUrl: "127.0.0.1:27042",
     tls: "disabled",
     token: "",
   });
 
+  const urlParams = readUrlParams();
+  const initialHost = urlParams.host || saved.serverUrl;
+  const initialTls = urlParams.tls || saved.tls;
+  const initialToken = urlParams.token || saved.token;
+
+  syncUrlParams(initialHost, initialTls, initialToken);
+
   return {
-    serverUrl: saved.serverUrl,
-    tls: saved.tls,
-    authToken: saved.token,
+    serverUrl: initialHost,
+    tls: initialTls,
+    authToken: initialToken,
     connected: false,
     busy: false,
     deviceInfo: null,
     spawnTarget: "",
 
-    setServerUrl: (serverUrl) => set({ serverUrl }),
-    setTls: (tls) => set({ tls }),
-    setAuthToken: (authToken) => set({ authToken }),
+    setServerUrl: (serverUrl) => {
+      set({ serverUrl });
+      syncUrlParams(serverUrl, get().tls, get().authToken);
+    },
+    setTls: (tls) => {
+      set({ tls });
+      syncUrlParams(get().serverUrl, tls, get().authToken);
+    },
+    setAuthToken: (authToken) => {
+      set({ authToken });
+      syncUrlParams(get().serverUrl, get().tls, authToken);
+    },
     setSpawnTarget: (spawnTarget) => set({ spawnTarget }),
 
     getClient: () => client,
@@ -65,11 +102,12 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
       if (!host) return null;
       const append = useConsoleStore.getState().append;
 
-      setItem("frida-web-settings", {
+      setItem("refrida-settings", {
         serverUrl: host,
         tls,
         token: authToken.trim(),
       });
+      syncUrlParams(host, tls, authToken.trim());
 
       append(`Connecting to ${host}...`, "system");
       set({ busy: true });

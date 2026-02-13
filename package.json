@@ -1,15 +1,15 @@
 {
-  "name": "frida-web",
+  "name": "refrida",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Browser GUI for communicating with frida-server",
+  "description": "Browser-based IDE for frida-server",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/zahidaz/frida-web.git"
+    "url": "https://github.com/zahidaz/refrida.git"
   },
-  "homepage": "https://github.com/zahidaz/frida-web#readme",
+  "homepage": "https://github.com/zahidaz/refrida#readme",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

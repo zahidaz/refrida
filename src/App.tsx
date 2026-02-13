@@ -1,39 +1,91 @@
-import { useRef, useState, useEffect, useCallback } from "react";
-import Navbar from "@/components/layout/Navbar.tsx";
-import Sidebar from "@/components/layout/Sidebar.tsx";
+import { useRef, useState, useEffect, useCallback, useMemo } from "react";
+import TitleBar from "@/components/layout/TitleBar.tsx";
+import ActivityBar from "@/components/layout/ActivityBar.tsx";
+import SidePanel from "@/components/layout/SidePanel.tsx";
+import StatusBar from "@/components/layout/StatusBar.tsx";
+import CommandPalette from "@/components/layout/CommandPalette.tsx";
+import ConnectionDialog from "@/components/connection/ConnectionDialog.tsx";
+import ProcessPicker from "@/components/connection/ProcessPicker.tsx";
+import AboutDialog from "@/components/layout/AboutDialog.tsx";
 import ScriptEditor from "@/components/editor/ScriptEditor.tsx";
 import type { MonacoEditor } from "@/components/editor/ScriptEditor.tsx";
 import TabBar from "@/components/editor/TabBar.tsx";
-import EditorToolbar from "@/components/editor/EditorToolbar.tsx";
-import EditorStatusBar from "@/components/editor/EditorStatusBar.tsx";
 import ConsolePanel from "@/components/console/ConsolePanel.tsx";
 import { useResizable, useResizablePercent } from "@/hooks/useResizable.ts";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts.ts";
+import { importFile } from "@/lib/fileIO.ts";
 import { useScriptsStore } from "@/stores/scripts.ts";
 import { useSessionStore } from "@/stores/session.ts";
+import { useLayoutStore } from "@/stores/layout.ts";
 
 export default function App() {
   const editorRef = useRef<MonacoEditor | null>(null);
   const [cursorLine, setCursorLine] = useState(1);
   const [cursorCol, setCursorCol] = useState(1);
 
-  const sidebar = useResizable("frida-web-sidebar-width", 380, 200, 800, "x");
+  const sidePanelVisible = useLayoutStore((s) => s.sidePanelVisible);
+  const sidePanelWidth = useLayoutStore((s) => s.sidePanelWidth);
+  const setSidePanelWidth = useLayoutStore((s) => s.setSidePanelWidth);
+  const bottomPanelVisible = useLayoutStore((s) => s.bottomPanelVisible);
+  const setBottomPanelVisible = useLayoutStore((s) => s.setBottomPanelVisible);
+  const commandPaletteOpen = useLayoutStore((s) => s.commandPaletteOpen);
+  const connectionDialogOpen = useLayoutStore((s) => s.connectionDialogOpen);
+  const processPickerOpen = useLayoutStore((s) => s.processPickerOpen);
+  const aboutOpen = useLayoutStore((s) => s.aboutOpen);
+
+  const sideResize = useResizable(
+    "refrida-side-panel-width",
+    300,
+    150,
+    600,
+    "x",
+  );
   const editorPane = useResizablePercent(
-    "frida-web-editor-height",
-    45,
+    "refrida-editor-height",
+    55,
     15,
     85,
     ".main-content",
   );
 
+  useEffect(() => {
+    setSidePanelWidth(sideResize.value);
+  }, [sideResize.value, setSidePanelWidth]);
+
   const runScript = useSessionStore((s) => s.runScript);
 
   const handleRun = useCallback(() => {
     const source = editorRef.current?.getValue() ?? "";
-    runScript(source);
-  }, [runScript]);
+    const tab = useScriptsStore.getState().getActiveTab();
+    runScript(source, tab?.name);
+    if (!bottomPanelVisible) setBottomPanelVisible(true);
+  }, [runScript, bottomPanelVisible, setBottomPanelVisible]);
 
-  useKeyboardShortcuts(handleRun);
+  const handleEditorLoad = useCallback((text: string) => {
+    editorRef.current?.setValue(text);
+    useScriptsStore.getState().syncCurrentTab(text);
+  }, []);
+
+  const handleImport = useCallback(() => {
+    importFile(handleEditorLoad);
+  }, [handleEditorLoad]);
+
+  const handleSave = useCallback(() => {
+    useScriptsStore
+      .getState()
+      .saveToLibrary(editorRef.current?.getValue() ?? "");
+  }, []);
+
+  const shortcutHandlers = useMemo(
+    () => ({
+      onRun: handleRun,
+      onImport: handleImport,
+      onSave: handleSave,
+    }),
+    [handleRun, handleImport, handleSave],
+  );
+
+  useKeyboardShortcuts(shortcutHandlers);
 
   useEffect(() => {
     useScriptsStore.getState().loadState();
@@ -51,9 +103,7 @@ export default function App() {
     if (file && file.name.endsWith(".js")) {
       const reader = new FileReader();
       reader.onload = (ev) => {
-        const text = ev.target?.result as string;
-        editorRef.current?.setValue(text);
-        useScriptsStore.getState().syncCurrentTab(text);
+        handleEditorLoad(ev.target?.result as string);
       };
       reader.readAsText(file);
     }
@@ -61,50 +111,70 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-full">
-      <Navbar />
+      <TitleBar editorRef={editorRef} />
+
       <div className="flex flex-1 overflow-hidden">
-        <div
-          style={{
-            width: sidebar.value,
-            minWidth: sidebar.value,
-          }}
-          className="overflow-hidden"
-        >
-          <Sidebar />
-        </div>
-        <div
-          className="resize-handle-x"
-          onMouseDown={sidebar.onMouseDown}
-        />
+        <ActivityBar />
+
+        {sidePanelVisible && (
+          <>
+            <div
+              style={{
+                width: sidePanelWidth,
+                minWidth: sidePanelWidth,
+              }}
+              className="overflow-hidden"
+            >
+              <SidePanel onLoadScript={handleEditorLoad} />
+            </div>
+            <div
+              className="resize-handle-x"
+              onMouseDown={sideResize.onMouseDown}
+            />
+          </>
+        )}
+
         <div className="flex-1 flex flex-col overflow-hidden main-content">
           <div
             className="flex flex-col overflow-hidden"
-            style={{ height: `${editorPane.value}%` }}
+            style={{
+              height: bottomPanelVisible ? `${editorPane.value}%` : "100%",
+            }}
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
           >
-            <TabBar editorRef={editorRef} />
-            <EditorToolbar editorRef={editorRef} />
+            <TabBar editorRef={editorRef} onRun={handleRun} />
             <div className="flex-1 overflow-hidden">
               <ScriptEditor
                 editorRef={editorRef}
                 onCursorChange={handleCursorChange}
               />
             </div>
-            <EditorStatusBar line={cursorLine} col={cursorCol} />
           </div>
-          <div
-            className="resize-handle-y"
-            onMouseDown={editorPane.onMouseDown}
-          />
-          <div
-            className="flex flex-col overflow-hidden"
-            style={{ height: `${100 - editorPane.value}%` }}
-          >
-            <ConsolePanel />
-          </div>
+
+          {bottomPanelVisible && (
+            <>
+              <div
+                className="resize-handle-y"
+                onMouseDown={editorPane.onMouseDown}
+              />
+              <div
+                className="flex flex-col overflow-hidden"
+                style={{ height: `${100 - editorPane.value}%` }}
+              >
+                <ConsolePanel />
+              </div>
+            </>
+          )}
         </div>
       </div>
+
+      <StatusBar cursorLine={cursorLine} cursorCol={cursorCol} />
+
+      {commandPaletteOpen && <CommandPalette onRun={handleRun} />}
+      {connectionDialogOpen && <ConnectionDialog />}
+      {processPickerOpen && <ProcessPicker />}
+      {aboutOpen && <AboutDialog />}
     </div>
   );
 }

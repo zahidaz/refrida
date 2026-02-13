@@ -23,7 +23,7 @@ function copyFridaClient(): Plugin {
 }
 
 export default defineConfig({
-  base: "/frida-web/",
+  base: "/refrida/",
   plugins: [react(), tailwindcss(), copyFridaClient()],
   resolve: {
     alias: {

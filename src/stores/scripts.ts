@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { getItem, setItem } from "@/lib/storage.ts";
 
-const TABS_KEY = "frida-web-tabs";
-const SCRIPTS_KEY = "frida-web-scripts";
+const TABS_KEY = "refrida-tabs";
+const SCRIPTS_KEY = "refrida-scripts";
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -30,8 +30,6 @@ interface ScriptsState {
   tabs: ScriptTab[];
   activeTabId: string;
   savedScripts: SavedScript[];
-  showSavedScripts: boolean;
-  setShowSavedScripts: (v: boolean) => void;
   loadState: () => void;
   syncCurrentTab: (content: string) => void;
   switchTab: (id: string, getCurrentContent: () => string) => void;
@@ -49,9 +47,6 @@ export const useScriptsStore = create<ScriptsState>((set, get) => ({
   tabs: [{ id: generateId(), name: "Script 1", content: "" }],
   activeTabId: "",
   savedScripts: [],
-  showSavedScripts: false,
-
-  setShowSavedScripts: (showSavedScripts) => set({ showSavedScripts }),
 
   loadState: () => {
     const saved = getItem<TabsData | null>(TABS_KEY, null);
@@ -162,7 +157,6 @@ export const useScriptsStore = create<ScriptsState>((set, get) => ({
   loadFromLibrary: (id) => {
     const script = get().savedScripts.find((s) => s.id === id);
     if (!script) return null;
-    set({ showSavedScripts: false });
     return script.content;
   },
 
