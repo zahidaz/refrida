@@ -1,32 +1,45 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { connectClient, isServerReachable, findTestProcess, runScript } from "./helpers.ts";
-import type { FridaClient, FridaSession } from "@/lib/frida.ts";
-import { enumerateModulesScript, disassembleScript } from "@/lib/utilityScripts.ts";
+import { getDevice, isServerReachable, findTestProcess, runScript, type Device, type Session } from "./helpers.ts";
+import { enumerateModulesScript, enumerateExportsScript, disassembleScript } from "@/lib/utilityScripts.ts";
 
-let client: FridaClient;
-let session: FridaSession;
-let moduleBase: string;
+let device: Device;
+let session: Session;
+let exportAddr: string;
+let reachable = false;
 
 beforeAll(async () => {
-  if (!(await isServerReachable())) return;
-  client = await connectClient();
-  const proc = await findTestProcess(client);
-  session = await client.attach(proc.pid);
+  reachable = await isServerReachable();
+  if (!reachable) return;
+  device = await getDevice();
+  const proc = await findTestProcess(device);
+  session = await device.attach(proc.pid);
 
-  const mods = await runScript<{ base: string }>(session, enumerateModulesScript());
-  if (mods.data[0]) moduleBase = mods.data[0].base;
+  const mods = await runScript<{ name: string }>(session, enumerateModulesScript());
+  for (const mod of mods.data) {
+    const exps = await runScript<{ type: string; name: string; address: string }>(
+      session,
+      enumerateExportsScript(mod.name),
+    );
+    const funcExport = exps.data.find((e) => e.type === "function");
+    if (funcExport) {
+      exportAddr = funcExport.address;
+      break;
+    }
+  }
 });
 
 afterAll(async () => {
-  if (session && !session.isDetached) session.detach();
+  if (session) {
+    try { await session.detach(); } catch {}
+  }
 });
 
 describe("disasm e2e", () => {
-  it("disassembles instructions at module base", async () => {
-    if (!session || !moduleBase) return;
+  it("disassembles instructions at a function export address", async () => {
+    if (!reachable || !exportAddr) return;
     const result = await runScript<{ address: string; mnemonic: string; opStr: string; size: number; bytes: number[] }>(
       session,
-      disassembleScript(moduleBase, 20),
+      disassembleScript(exportAddr, 10),
     );
     expect(result.data.length).toBeGreaterThan(0);
     const instr = result.data[0];

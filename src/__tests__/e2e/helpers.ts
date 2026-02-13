@@ -1,39 +1,29 @@
-import type { FridaClient, FridaSession, FridaMessage } from "@/lib/frida.ts";
+import frida from "frida";
+import type { Device, Session, Script, Message, SendMessage, ErrorMessage } from "frida";
 
-const FRIDA_HOST = process.env.FRIDA_HOST || "127.0.0.1:27042";
+const FRIDA_HOST = process.env["FRIDA_HOST"] || "127.0.0.1:27042";
 
-let FridaWeb: typeof import("frida-web-client-browserify");
+let cachedDevice: Device | null = null;
 
-async function getFridaWeb() {
-  if (!FridaWeb) {
-    FridaWeb = await import("frida-web-client-browserify");
-  }
-  return FridaWeb;
-}
-
-export async function connectClient(host?: string): Promise<FridaClient> {
-  const fw = await getFridaWeb();
-  const client = new fw.Client(host || FRIDA_HOST, {
-    tls: fw.TransportLayerSecurity.Disabled,
-  });
-  return client as unknown as FridaClient;
+export async function getDevice(host?: string): Promise<Device> {
+  if (cachedDevice) return cachedDevice;
+  const mgr = frida.getDeviceManager();
+  cachedDevice = await mgr.addRemoteDevice(host || FRIDA_HOST);
+  return cachedDevice;
 }
 
 export async function isServerReachable(host?: string): Promise<boolean> {
   try {
-    const client = await connectClient(host);
-    await client.enumerateProcesses();
+    const device = await getDevice(host);
+    await device.enumerateProcesses();
     return true;
   } catch {
     return false;
   }
 }
 
-export async function findTestProcess(client: FridaClient): Promise<{ pid: number; name: string }> {
-  const processes = await client.enumerateProcesses();
-  const sleep = processes.find((p) => p.name === "sleep");
-  if (sleep) return { pid: sleep.pid, name: sleep.name };
-
+export async function findTestProcess(device: Device): Promise<{ pid: number; name: string }> {
+  const processes = await device.enumerateProcesses();
   const server = processes.find((p) => p.name.includes("frida-server"));
   if (server) return { pid: server.pid, name: server.name };
 
@@ -47,43 +37,61 @@ export interface ScriptResult<T = unknown> {
 }
 
 export async function runScript<T = unknown>(
-  session: FridaSession,
+  session: Session,
   source: string,
-  name?: string,
   timeout = 15000,
 ): Promise<ScriptResult<T>> {
   const data: T[] = [];
+  let error: string | undefined;
+  const script: Script = await session.createScript(source);
+  let settled = false;
 
-  const script = await session.createScript(source, name ? { name } : undefined);
+  const done = new Promise<void>((resolve) => {
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        error = "Script timeout";
+        resolve();
+      }
+    }, timeout);
 
-  const done = new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("Script timeout")), timeout);
-
-    script.message.connect((msg: FridaMessage) => {
-      if (msg.type === "error") {
+    script.message.connect((message: Message) => {
+      if (settled) return;
+      if (message.type === "error") {
+        settled = true;
         clearTimeout(timer);
-        reject(new Error(msg.description ?? "Script error"));
+        error = (message as ErrorMessage).description ?? "Script error";
+        resolve();
         return;
       }
-      if (msg.type === "send" && msg.payload != null) {
-        const payload = msg.payload as Record<string, unknown>;
-        if (payload.type === "__done__") {
-          clearTimeout(timer);
-          resolve();
-          return;
+      if (message.type === "send") {
+        const payload = (message as SendMessage).payload;
+        if (payload != null) {
+          const p = payload as Record<string, unknown>;
+          if (p.type === "__done__") {
+            settled = true;
+            clearTimeout(timer);
+            resolve();
+            return;
+          }
+          if (p.type === "__utility_error__") {
+            settled = true;
+            clearTimeout(timer);
+            error = (p.message as string) ?? "Unknown error";
+            resolve();
+            return;
+          }
+          data.push(payload as T);
         }
-        if (payload.type === "__utility_error__") {
-          clearTimeout(timer);
-          reject(new Error((payload.message as string) ?? "Unknown error"));
-          return;
-        }
-        data.push(msg.payload as T);
       }
     });
 
     script.destroyed.connect(() => {
-      clearTimeout(timer);
-      resolve();
+      if (!settled) {
+        settled = true;
+        clearTimeout(timer);
+        resolve();
+      }
     });
   });
 
@@ -94,5 +102,8 @@ export async function runScript<T = unknown>(
     await script.unload();
   } catch {}
 
+  if (error) return { data, error };
   return { data };
 }
+
+export type { Device, Session };

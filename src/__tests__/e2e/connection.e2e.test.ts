@@ -1,37 +1,34 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { connectClient, isServerReachable } from "./helpers.ts";
-import type { FridaClient } from "@/lib/frida.ts";
+import { getDevice, isServerReachable, type Device } from "./helpers.ts";
 
-let client: FridaClient;
+let device: Device;
+let reachable = false;
 
 beforeAll(async () => {
-  const reachable = await isServerReachable();
-  if (!reachable) {
-    console.log("Skipping E2E tests: frida-server not reachable");
-    return;
-  }
-  client = await connectClient();
+  reachable = await isServerReachable();
+  if (!reachable) return;
+  device = await getDevice();
 });
 
 describe("connection e2e", () => {
   it("connects and enumerates processes", async () => {
-    if (!client) return;
-    const processes = await client.enumerateProcesses();
+    if (!reachable) return;
+    const processes = await device.enumerateProcesses();
     expect(processes.length).toBeGreaterThan(0);
     expect(processes[0]).toHaveProperty("pid");
     expect(processes[0]).toHaveProperty("name");
   });
 
   it("queries system parameters", async () => {
-    if (!client) return;
-    const params = await client.querySystemParameters();
+    if (!reachable) return;
+    const params = await device.querySystemParameters();
     expect(params).toHaveProperty("os");
     expect(params).toHaveProperty("arch");
   });
 
   it("enumerates applications", async () => {
-    if (!client) return;
-    const apps = await client.enumerateApplications();
+    if (!reachable) return;
+    const apps = await device.enumerateApplications();
     expect(Array.isArray(apps)).toBe(true);
   });
 });

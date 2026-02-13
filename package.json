@@ -41,6 +41,7 @@
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
+    "frida": "^17.6.2",
     "globals": "^16.5.0",
     "happy-dom": "^20.6.1",
     "monaco-editor": "^0.55.1",

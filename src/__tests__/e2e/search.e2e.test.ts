@@ -1,25 +1,28 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { connectClient, isServerReachable, findTestProcess, runScript } from "./helpers.ts";
-import type { FridaClient, FridaSession } from "@/lib/frida.ts";
+import { getDevice, isServerReachable, findTestProcess, runScript, type Device, type Session } from "./helpers.ts";
 import { apiResolverScript } from "@/lib/utilityScripts.ts";
 
-let client: FridaClient;
-let session: FridaSession;
+let device: Device;
+let session: Session;
+let reachable = false;
 
 beforeAll(async () => {
-  if (!(await isServerReachable())) return;
-  client = await connectClient();
-  const proc = await findTestProcess(client);
-  session = await client.attach(proc.pid);
+  reachable = await isServerReachable();
+  if (!reachable) return;
+  device = await getDevice();
+  const proc = await findTestProcess(device);
+  session = await device.attach(proc.pid);
 });
 
 afterAll(async () => {
-  if (session && !session.isDetached) session.detach();
+  if (session) {
+    try { await session.detach(); } catch {}
+  }
 });
 
 describe("search e2e", () => {
   it("resolves API symbols matching a pattern", async () => {
-    if (!session) return;
+    if (!reachable) return;
     const result = await runScript<{ name: string; address: string }>(
       session,
       apiResolverScript("exports:*!open*"),

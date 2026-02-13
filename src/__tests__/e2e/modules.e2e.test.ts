@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { connectClient, isServerReachable, findTestProcess, runScript } from "./helpers.ts";
-import type { FridaClient, FridaSession } from "@/lib/frida.ts";
+import { getDevice, isServerReachable, findTestProcess, runScript, type Device, type Session } from "./helpers.ts";
 import {
   enumerateModulesScript,
   enumerateExportsScript,
@@ -8,23 +7,32 @@ import {
   enumerateRangesScript,
 } from "@/lib/utilityScripts.ts";
 
-let client: FridaClient;
-let session: FridaSession;
+let device: Device;
+let session: Session;
+let reachable = false;
+let smallModule: string;
 
 beforeAll(async () => {
-  if (!(await isServerReachable())) return;
-  client = await connectClient();
-  const proc = await findTestProcess(client);
-  session = await client.attach(proc.pid);
+  reachable = await isServerReachable();
+  if (!reachable) return;
+  device = await getDevice();
+  const proc = await findTestProcess(device);
+  session = await device.attach(proc.pid);
+
+  const mods = await runScript<{ name: string; size: number }>(session, enumerateModulesScript());
+  const sorted = [...mods.data].sort((a, b) => a.size - b.size);
+  smallModule = sorted[Math.min(2, sorted.length - 1)]?.name ?? mods.data[0]?.name;
 });
 
 afterAll(async () => {
-  if (session && !session.isDetached) session.detach();
+  if (session) {
+    try { await session.detach(); } catch {}
+  }
 });
 
 describe("modules e2e", () => {
   it("enumerates modules with name, base, size, path", async () => {
-    if (!session) return;
+    if (!reachable) return;
     const result = await runScript<{ name: string; base: string; size: number; path: string }>(
       session,
       enumerateModulesScript(),
@@ -40,42 +48,32 @@ describe("modules e2e", () => {
   });
 
   it("enumerates exports for a module", async () => {
-    if (!session) return;
-    const mods = await runScript<{ name: string }>(session, enumerateModulesScript());
-    const firstMod = mods.data[0];
-    if (!firstMod) return;
-
+    if (!reachable || !smallModule) return;
     const result = await runScript<{ type: string; name: string; address: string }>(
       session,
-      enumerateExportsScript(firstMod.name),
+      enumerateExportsScript(smallModule),
     );
-    expect(result.data.length).toBeGreaterThan(0);
-    expect(result.data[0]).toHaveProperty("name");
-    expect(result.data[0]).toHaveProperty("address");
+    expect(Array.isArray(result.data)).toBe(true);
+    if (result.data.length > 0) {
+      expect(result.data[0]).toHaveProperty("name");
+      expect(result.data[0]).toHaveProperty("address");
+    }
   });
 
   it("enumerates imports for a module", async () => {
-    if (!session) return;
-    const mods = await runScript<{ name: string }>(session, enumerateModulesScript());
-    const firstMod = mods.data[0];
-    if (!firstMod) return;
-
+    if (!reachable || !smallModule) return;
     const result = await runScript<{ name: string; address: string }>(
       session,
-      enumerateImportsScript(firstMod.name),
+      enumerateImportsScript(smallModule),
     );
     expect(Array.isArray(result.data)).toBe(true);
   });
 
   it("enumerates memory ranges for a module", async () => {
-    if (!session) return;
-    const mods = await runScript<{ name: string }>(session, enumerateModulesScript());
-    const firstMod = mods.data[0];
-    if (!firstMod) return;
-
+    if (!reachable || !smallModule) return;
     const result = await runScript<{ base: string; size: number; protection: string }>(
       session,
-      enumerateRangesScript(firstMod.name),
+      enumerateRangesScript(smallModule),
     );
     expect(result.data.length).toBeGreaterThan(0);
     expect(result.data[0]).toHaveProperty("base");

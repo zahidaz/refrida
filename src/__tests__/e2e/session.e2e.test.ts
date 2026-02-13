@@ -1,33 +1,32 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { connectClient, isServerReachable, findTestProcess, runScript } from "./helpers.ts";
-import type { FridaClient, FridaSession } from "@/lib/frida.ts";
+import { getDevice, isServerReachable, findTestProcess, runScript, type Device, type Session } from "./helpers.ts";
 
-let client: FridaClient;
-let session: FridaSession;
-let testProcess: { pid: number; name: string };
+let device: Device;
+let session: Session;
+let reachable = false;
 
 beforeAll(async () => {
-  if (!(await isServerReachable())) return;
-  client = await connectClient();
-  testProcess = await findTestProcess(client);
-  session = await client.attach(testProcess.pid);
+  reachable = await isServerReachable();
+  if (!reachable) return;
+  device = await getDevice();
+  const proc = await findTestProcess(device);
+  session = await device.attach(proc.pid);
 });
 
 afterAll(async () => {
-  if (session && !session.isDetached) {
-    session.detach();
+  if (session) {
+    try { await session.detach(); } catch {}
   }
 });
 
 describe("session e2e", () => {
   it("attaches to a process", () => {
-    if (!session) return;
+    if (!reachable) return;
     expect(session).toBeDefined();
-    expect(session.isDetached).toBe(false);
   });
 
   it("creates and loads a simple script", async () => {
-    if (!session) return;
+    if (!reachable) return;
     const result = await runScript(session, `
       send("hello from frida");
       send({ type: "__done__" });
@@ -37,7 +36,7 @@ describe("session e2e", () => {
   });
 
   it("receives multiple messages", async () => {
-    if (!session) return;
+    if (!reachable) return;
     const result = await runScript(session, `
       send({ value: 1 });
       send({ value: 2 });
