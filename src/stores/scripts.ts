@@ -14,10 +14,14 @@ function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
 
+export type TabType = "code" | "hex";
+
 export interface ScriptTab {
   id: string;
   name: string;
+  type: TabType;
   content: string;
+  address?: string;
 }
 
 export interface SavedScript {
@@ -46,27 +50,29 @@ interface ScriptsState {
   loadFromLibrary: (id: string) => string | null;
   deleteFromLibrary: (id: string) => void;
   openInNewTab: (name: string, content: string, getCurrentContent: () => string) => void;
+  openHexTab: (address: string, getCurrentContent: () => string) => void;
   reorderTabs: (fromId: string, toId: string) => void;
   updateTabContent: (content: string) => void;
   getActiveTab: () => ScriptTab | undefined;
 }
 
 export const useScriptsStore = create<ScriptsState>((set, get) => ({
-  tabs: [{ id: generateId(), name: "Script 1", content: STARTER_CODE }],
+  tabs: [{ id: generateId(), name: "Script 1", type: "code" as TabType, content: STARTER_CODE }],
   activeTabId: "",
   savedScripts: [],
 
   loadState: () => {
     const saved = getItem<TabsData | null>(TABS_KEY, null);
     if (saved?.tabs?.length) {
+      const tabs = saved.tabs.map((t) => ({ ...t, type: t.type || ("code" as TabType) }));
       set({
-        tabs: saved.tabs,
-        activeTabId: saved.activeTabId || saved.tabs[0].id,
+        tabs,
+        activeTabId: saved.activeTabId || tabs[0].id,
       });
     } else {
       const id = generateId();
       set({
-        tabs: [{ id, name: "Script 1", content: STARTER_CODE }],
+        tabs: [{ id, name: "Script 1", type: "code" as TabType, content: STARTER_CODE }],
         activeTabId: id,
       });
     }
@@ -111,6 +117,7 @@ export const useScriptsStore = create<ScriptsState>((set, get) => ({
     const newTab: ScriptTab = {
       id,
       name: `Script ${n}`,
+      type: "code",
       content: "",
     };
     const newTabs = [...tabs, newTab];
@@ -185,7 +192,22 @@ export const useScriptsStore = create<ScriptsState>((set, get) => ({
         : t,
     );
     const id = generateId();
-    const newTab: ScriptTab = { id, name, content };
+    const newTab: ScriptTab = { id, name, type: "code", content };
+    const newTabs = [...tabs, newTab];
+    set({ tabs: newTabs, activeTabId: id });
+    setItem(TABS_KEY, { tabs: newTabs, activeTabId: id });
+  },
+
+  openHexTab: (address, getCurrentContent) => {
+    const state = get();
+    const tabs = state.tabs.map((t) =>
+      t.id === state.activeTabId && t.type === "code"
+        ? { ...t, content: getCurrentContent() }
+        : t,
+    );
+    const id = generateId();
+    const label = address ? `Hex: ${address}` : "Hex Viewer";
+    const newTab: ScriptTab = { id, name: label, type: "hex", content: "", address };
     const newTabs = [...tabs, newTab];
     set({ tabs: newTabs, activeTabId: id });
     setItem(TABS_KEY, { tabs: newTabs, activeTabId: id });

@@ -29,6 +29,10 @@ interface SessionState {
 
 let currentSession: FridaSession | null = null;
 let currentScript: FridaScript | null = null;
+
+export function getSession(): FridaSession | null {
+  return currentSession;
+}
 let busyAbort: AbortController | null = null;
 
 async function cleanupScript(silent?: boolean) {

@@ -2,6 +2,7 @@ import { useRef, useEffect } from "react";
 import { useConsoleStore, getFilteredLines } from "@/stores/console.ts";
 import ConsoleToolbar from "./ConsoleToolbar.tsx";
 import ConsoleLine from "./ConsoleLine.tsx";
+import ReplInput from "./ReplInput.tsx";
 
 export default function ConsolePanel() {
   const state = useConsoleStore();
@@ -36,6 +37,7 @@ export default function ConsolePanel() {
           </div>
         )}
       </div>
+      <ReplInput />
     </div>
   );
 }

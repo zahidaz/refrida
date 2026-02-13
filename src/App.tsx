@@ -11,6 +11,7 @@ import WelcomeScreen from "@/components/layout/WelcomeScreen.tsx";
 import SaveDialog from "@/components/ui/SaveDialog.tsx";
 import ScriptEditor from "@/components/editor/ScriptEditor.tsx";
 import type { MonacoEditor } from "@/components/editor/ScriptEditor.tsx";
+import HexViewerTab from "@/components/editor/HexViewerTab.tsx";
 import TabBar from "@/components/editor/TabBar.tsx";
 import ConsolePanel from "@/components/console/ConsolePanel.tsx";
 import { useResizable, useResizablePercent } from "@/hooks/useResizable.ts";
@@ -27,6 +28,9 @@ export default function App() {
   const [cursorCol, setCursorCol] = useState(1);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const isMobile = useIsMobile();
+
+  const activeTabId = useScriptsStore((s) => s.activeTabId);
+  const activeTabType = useScriptsStore((s) => s.tabs.find((t) => t.id === s.activeTabId)?.type ?? "code");
 
   const sidePanelVisible = useLayoutStore((s) => s.sidePanelVisible);
   const setSidePanelVisible = useLayoutStore((s) => s.setSidePanelVisible);
@@ -183,6 +187,8 @@ export default function App() {
                     setWelcomeOpen(false);
                   }}
                 />
+              ) : activeTabType === "hex" ? (
+                <HexViewerTab tabId={activeTabId} />
               ) : (
                 <ScriptEditor
                   editorRef={editorRef}

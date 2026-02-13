@@ -1,7 +1,18 @@
-import { useLayoutStore } from "@/stores/layout.ts";
+import { useLayoutStore, type Activity } from "@/stores/layout.ts";
 import { useIsMobile } from "@/hooks/useIsMobile.ts";
 import ScriptLibrary from "@/components/sidebar/ScriptLibrary.tsx";
 import SettingsPanel from "@/components/sidebar/SettingsPanel.tsx";
+import ModuleBrowser from "@/components/sidebar/ModuleBrowser.tsx";
+import MemoryViewer from "@/components/sidebar/MemoryViewer.tsx";
+import SearchPanel from "@/components/sidebar/SearchPanel.tsx";
+
+const LABELS: Record<Activity, string> = {
+  scripts: "Scripts",
+  settings: "Settings",
+  modules: "Modules",
+  memory: "Memory",
+  search: "Search",
+};
 
 interface Props {
   onLoadScript: (name: string, content: string) => void;
@@ -29,7 +40,7 @@ export default function SidePanel({ onLoadScript }: Props) {
             className="text-xs font-semibold"
             style={{ color: "var(--text-primary)" }}
           >
-            {activeActivity === "scripts" ? "Scripts" : "Settings"}
+            {LABELS[activeActivity]}
           </span>
           <button
             onClick={() => setSidePanelVisible(false)}
@@ -44,6 +55,9 @@ export default function SidePanel({ onLoadScript }: Props) {
         <ScriptLibrary onLoadScript={onLoadScript} />
       )}
       {activeActivity === "settings" && <SettingsPanel />}
+      {activeActivity === "modules" && <ModuleBrowser />}
+      {activeActivity === "memory" && <MemoryViewer />}
+      {activeActivity === "search" && <SearchPanel />}
     </div>
   );
 }
