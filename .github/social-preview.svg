@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#141414"/>
+      <stop offset="100%" style="stop-color:#1f1208"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#d97706"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:0"/>
+      <stop offset="20%" style="stop-color:#f59e0b;stop-opacity:0.6"/>
+      <stop offset="80%" style="stop-color:#d97706;stop-opacity:0.6"/>
+      <stop offset="100%" style="stop-color:#d97706;stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#bg)"/>
+
+  <circle cx="100" cy="80" r="4" fill="#f59e0b" opacity="0.15"/>
+  <circle cx="1180" cy="560" r="5" fill="#d97706" opacity="0.12"/>
+  <circle cx="1150" cy="90" r="3" fill="#f59e0b" opacity="0.1"/>
+  <circle cx="130" cy="550" r="3.5" fill="#d97706" opacity="0.1"/>
+
+  <text x="640" y="270" text-anchor="middle" font-family="Helvetica" font-size="96" font-weight="bold" letter-spacing="-2">
+    <tspan fill="#f59e0b">re</tspan><tspan fill="#e5e5e5">Frida</tspan>
+  </text>
+
+  <rect x="240" y="310" width="800" height="1.5" rx="1" fill="url(#line)"/>
+
+  <text x="640" y="370" text-anchor="middle" font-family="Helvetica" font-size="24" fill="#999" letter-spacing="6">
+    FRIDA IN YOUR BROWSER
+  </text>
+
+  <text x="640" y="430" text-anchor="middle" font-family="Helvetica" font-size="18" fill="#666">
+    Attach to processes. Run scripts. See results instantly.
+  </text>
+
+  <rect x="505" y="478" width="270" height="40" rx="20" fill="none" stroke="#f59e0b" stroke-width="1.5" opacity="0.4"/>
+  <text x="640" y="504" text-anchor="middle" font-family="Helvetica" font-size="14" fill="#f59e0b" letter-spacing="2" opacity="0.7">
+    OPEN SOURCE IDE
+  </text>
+</svg>
