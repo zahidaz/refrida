@@ -1,11 +1,14 @@
 <div align="center">
 
-# reFrida
+<picture>
+  <img src=".github/banner.svg" alt="reFrida" width="800">
+</picture>
 
-**Frida, in your browser.**
+<br><br>
 
 [![Open reFrida](https://img.shields.io/badge/Open_reFrida-f59e0b?style=for-the-badge)](https://zahidaz.github.io/refrida/)
 [![License](https://img.shields.io/github/license/zahidaz/refrida?style=for-the-badge&color=555)](LICENSE.md)
+[![GitHub Stars](https://img.shields.io/github/stars/zahidaz/refrida?style=for-the-badge&color=555)](https://github.com/zahidaz/refrida)
 
 </div>
 
