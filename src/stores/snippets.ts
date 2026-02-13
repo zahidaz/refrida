@@ -25,8 +25,11 @@ function parseSnippets(md: string): Snippet[] {
   let index = 0;
 
   for (const line of lines) {
-    if (line.startsWith("## ") || line.startsWith("### ")) {
-      currentTitle = line.replace(/^#+\s*/, "").replace(/\d+\.\s*/, "").trim();
+    if (/^#{2,6}\s/.test(line)) {
+      const title = line.replace(/^#+\s*/, "").replace(/\d+\.\s*/, "").trim();
+      if (title.toLowerCase() !== "table of contents") {
+        currentTitle = title;
+      }
     }
 
     if (line.startsWith("```js") || line.startsWith("```javascript")) {
