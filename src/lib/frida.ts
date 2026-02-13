@@ -78,6 +78,7 @@ export interface FridaMessage {
 }
 
 export interface ScriptOptions {
+  name?: string;
   runtime?: string;
 }
 

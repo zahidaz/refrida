@@ -166,7 +166,10 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     set({ busy: true, busyLabel: "Loading script..." });
 
     try {
-      const opts: { runtime?: string } = {};
+      const opts: { name?: string; runtime?: string } = {};
+      if (scriptName) {
+        opts.name = scriptName;
+      }
       if (scriptRuntime !== "default") {
         opts.runtime = scriptRuntime;
       }

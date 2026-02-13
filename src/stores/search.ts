@@ -51,6 +51,7 @@ export const useSearchStore = create<SearchState>((set, get) => ({
     if (searchMode === "api") {
       const result = await runUtilityScript<ApiMatch | { truncated: boolean; total: number }>(
         apiResolverScript(query),
+        "api-resolve",
       );
       if (result.error) {
         set({ loading: false, error: result.error });
@@ -62,6 +63,7 @@ export const useSearchStore = create<SearchState>((set, get) => ({
       const isHex = searchMode === "hex";
       const result = await runUtilityScript<SearchMatch>(
         searchMemoryScript(query, isHex),
+        "memory-search",
       );
       if (result.error) {
         set({ loading: false, error: result.error });

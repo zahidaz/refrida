@@ -100,7 +100,7 @@ export const useModulesStore = create<ModulesState>((set, get) => ({
 
   enumerate: async () => {
     set({ loading: true });
-    const result = await runUtilityScript<ModuleInfo>(enumerateModulesScript());
+    const result = await runUtilityScript<ModuleInfo>(enumerateModulesScript(), "enumerate-modules");
     set({ modules: result.data, loading: false, expandedModule: null, expandedModuleName: null });
   },
 
@@ -108,22 +108,22 @@ export const useModulesStore = create<ModulesState>((set, get) => ({
     set({ loadingDetail: true });
     switch (tab) {
       case "exports": {
-        const r = await runUtilityScript<ExportInfo>(enumerateExportsScript(moduleName));
+        const r = await runUtilityScript<ExportInfo>(enumerateExportsScript(moduleName), `exports:${moduleName}`);
         set((s) => ({ exports: { ...s.exports, [key]: r.data }, loadingDetail: false }));
         break;
       }
       case "imports": {
-        const r = await runUtilityScript<ImportInfo>(enumerateImportsScript(moduleName));
+        const r = await runUtilityScript<ImportInfo>(enumerateImportsScript(moduleName), `imports:${moduleName}`);
         set((s) => ({ imports: { ...s.imports, [key]: r.data }, loadingDetail: false }));
         break;
       }
       case "symbols": {
-        const r = await runUtilityScript<SymbolInfo>(enumerateSymbolsScript(moduleName));
+        const r = await runUtilityScript<SymbolInfo>(enumerateSymbolsScript(moduleName), `symbols:${moduleName}`);
         set((s) => ({ symbols: { ...s.symbols, [key]: r.data }, loadingDetail: false }));
         break;
       }
       case "sections": {
-        const r = await runUtilityScript<RangeInfo>(enumerateRangesScript(moduleName));
+        const r = await runUtilityScript<RangeInfo>(enumerateRangesScript(moduleName), `sections:${moduleName}`);
         set((s) => ({ ranges: { ...s.ranges, [key]: r.data }, loadingDetail: false }));
         break;
       }
@@ -155,7 +155,7 @@ export const useModulesStore = create<ModulesState>((set, get) => ({
 
   dumpModule: async (moduleName: string) => {
     set({ dumping: true });
-    const result = await runUtilityScript<DumpChunk>(dumpModuleScript(moduleName));
+    const result = await runUtilityScript<DumpChunk>(dumpModuleScript(moduleName), `dump:${moduleName}`);
     set({ dumping: false });
     if (result.data.length === 0) return;
 

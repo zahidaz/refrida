@@ -64,6 +64,7 @@ export const useMonitorsStore = create<MonitorsState>((set, get) => ({
         set((s) => ({ networkEvents: [...s.networkEvents.slice(-999), data] }));
       },
       (error) => set({ networkError: error, networkActive: false }),
+      "network-monitor",
     );
     if (handle) {
       networkHandle = handle;
@@ -92,6 +93,7 @@ export const useMonitorsStore = create<MonitorsState>((set, get) => ({
         set((s) => ({ fileEvents: [...s.fileEvents.slice(-999), data] }));
       },
       (error) => set({ fileError: error, fileActive: false }),
+      "file-monitor",
     );
     if (handle) {
       fileHandle = handle;

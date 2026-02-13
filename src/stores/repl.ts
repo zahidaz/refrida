@@ -38,7 +38,7 @@ export const useReplStore = create<ReplState>((set, get) => ({
       input: "",
     });
 
-    const result = await runUtilityScript(evalScript(trimmed));
+    const result = await runUtilityScript(evalScript(trimmed), "repl-eval");
 
     if (result.error) {
       console.append(result.error, "error");

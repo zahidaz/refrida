@@ -8,6 +8,7 @@ export interface UtilityResult<T = unknown> {
 
 export async function runUtilityScript<T = unknown>(
   source: string,
+  name?: string,
 ): Promise<UtilityResult<T>> {
   const session = getSession();
   if (!session || session.isDetached) {
@@ -17,7 +18,7 @@ export async function runUtilityScript<T = unknown>(
   const data: T[] = [];
 
   try {
-    const script = await session.createScript(source);
+    const script = await session.createScript(source, name ? { name } : undefined);
 
     const done = new Promise<void>((resolve, reject) => {
       script.message.connect((msg: FridaMessage) => {

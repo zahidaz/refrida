@@ -28,6 +28,7 @@ export default function TitleBar({ editorRef, onSave }: Props) {
     setConnectionDialogOpen,
     setProcessPickerOpen,
     setCommandPaletteOpen,
+    setAboutOpen,
   } = useLayoutStore();
   const isMobile = useIsMobile();
 
@@ -43,7 +44,11 @@ export default function TitleBar({ editorRef, onSave }: Props) {
         borderColor: "var(--border)",
       }}
     >
-      <span className="text-sm font-bold font-mono select-none shrink-0 mr-1">
+      <button
+        onClick={() => setAboutOpen(true)}
+        className="text-sm font-bold font-mono select-none shrink-0 mr-1 cursor-pointer bg-transparent border-none p-0"
+        title="About reFrida"
+      >
         <span style={{ color: "var(--accent-text)" }}>re</span>
         <span style={{ color: "var(--text-primary)" }}>Frida</span>
         <span
@@ -55,7 +60,7 @@ export default function TitleBar({ editorRef, onSave }: Props) {
         >
           beta
         </span>
-      </span>
+      </button>
 
       {isMobile ? (
         <button

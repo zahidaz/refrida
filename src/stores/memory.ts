@@ -105,6 +105,7 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
     updateTab(set, tabId, { loading: true, error: null, dirty: {} });
     const result = await runUtilityScript<MemoryReadResult>(
       readMemoryScript(trimmed, ts.chunkSize),
+      `memory-read:${trimmed}`,
     );
     if (result.error) {
       updateTab(set, tabId, { loading: false, error: result.error, data: null });
@@ -147,7 +148,7 @@ export const useMemoryStore = create<MemoryState>((set, get) => ({
     async function flush() {
       if (batch.length === 0) return;
       const addr = addHex(ts.currentAddress, start);
-      const result = await runUtilityScript<WriteResult>(writeMemoryScript(addr, batch));
+      const result = await runUtilityScript<WriteResult>(writeMemoryScript(addr, batch), `memory-write:${addr}`);
       if (result.error) throw new Error(result.error);
     }
 

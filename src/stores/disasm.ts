@@ -73,6 +73,7 @@ export const useDisasmStore = create<DisasmState>((set, get) => ({
     updateTab(set, tabId, { loading: true, error: null });
     const result = await runUtilityScript<Instruction>(
       disassembleScript(trimmed, ts.count),
+      `disasm:${trimmed}`,
     );
     if (result.error) {
       updateTab(set, tabId, { loading: false, error: result.error, instructions: [] });
@@ -95,6 +96,7 @@ export const useDisasmStore = create<DisasmState>((set, get) => ({
     updateTab(set, tabId, { loading: true, error: null });
     const result = await runUtilityScript<Instruction>(
       disassembleScript(nextAddr, ts.count),
+      `disasm:${nextAddr}`,
     );
     if (result.error) {
       updateTab(set, tabId, { loading: false, error: result.error });

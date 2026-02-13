@@ -9,6 +9,7 @@ export async function startMonitor<T = unknown>(
   source: string,
   onMessage: (data: T) => void,
   onError?: (error: string) => void,
+  name?: string,
 ): Promise<MonitorHandle | null> {
   const session = getSession();
   if (!session || session.isDetached) {
@@ -17,7 +18,7 @@ export async function startMonitor<T = unknown>(
   }
 
   try {
-    const script = await session.createScript(source);
+    const script = await session.createScript(source, name ? { name } : undefined);
 
     script.message.connect((msg: FridaMessage) => {
       if (msg.type === "error") {
