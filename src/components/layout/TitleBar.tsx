@@ -43,6 +43,15 @@ export default function TitleBar({ editorRef, onSave }: Props) {
       <span className="text-sm font-bold font-mono select-none mr-1">
         <span style={{ color: "var(--accent-text)" }}>re</span>
         <span style={{ color: "var(--text-primary)" }}>Frida</span>
+        <span
+          className="text-[8px] font-medium ml-1 px-1 py-px rounded-full align-top"
+          style={{
+            color: "var(--text-muted)",
+            border: "1px solid var(--border)",
+          }}
+        >
+          beta
+        </span>
       </span>
 
       <MenuBar editorRef={editorRef} onSave={onSave} />
