@@ -126,28 +126,36 @@ export default function TabBar({ editorRef, onRun }: Props) {
         </div>
       </div>
 
-      <div className="flex items-center gap-1 px-2 shrink-0">
+      <div className="flex items-center gap-1.5 px-2 shrink-0">
         <button
           onClick={onRun}
           disabled={!sessionActive}
-          className="titlebar-btn disabled:opacity-30"
-          style={{ color: scriptActive ? "var(--accent)" : "var(--console-ok)" }}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded disabled:opacity-30"
+          style={{
+            color: "white",
+            background: scriptActive ? "var(--accent)" : "#16a34a",
+          }}
           title={scriptActive ? "Re-run (Ctrl+Enter)" : "Run (Ctrl+Enter)"}
         >
           <i
             className={`fa-solid ${scriptActive ? "fa-rotate-right" : "fa-play"}`}
-            style={{ fontSize: 12 }}
+            style={{ fontSize: 10 }}
           />
+          {scriptActive ? "Re-run" : "Run"}
         </button>
 
         {scriptActive && (
           <button
             onClick={unloadScript}
-            className="titlebar-btn"
-            style={{ color: "#ef4444" }}
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded"
+            style={{
+              color: "#ef4444",
+              border: "1px solid rgba(239, 68, 68, 0.3)",
+            }}
             title="Stop Script"
           >
-            <i className="fa-solid fa-stop" style={{ fontSize: 11 }} />
+            <i className="fa-solid fa-stop" style={{ fontSize: 9 }} />
+            Stop
           </button>
         )}
       </div>
