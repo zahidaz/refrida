@@ -16,12 +16,15 @@ function generateId(): string {
 
 export type TabType = "code" | "hex" | "asm";
 
+export type ScriptLanguage = "javascript" | "typescript";
+
 export interface ScriptTab {
   id: string;
   name: string;
   type: TabType;
   content: string;
   address?: string;
+  language?: ScriptLanguage;
 }
 
 export interface SavedScript {
@@ -54,6 +57,7 @@ interface ScriptsState {
   openAsmTab: (address: string, getCurrentContent: () => string) => void;
   reorderTabs: (fromId: string, toId: string) => void;
   updateTabContent: (content: string) => void;
+  setTabLanguage: (id: string, language: ScriptLanguage) => void;
   getActiveTab: () => ScriptTab | undefined;
 }
 
@@ -247,6 +251,16 @@ export const useScriptsStore = create<ScriptsState>((set, get) => ({
     set((state) => {
       const tabs = state.tabs.map((t) =>
         t.id === state.activeTabId ? { ...t, content } : t,
+      );
+      setItem(TABS_KEY, { tabs, activeTabId: state.activeTabId });
+      return { tabs };
+    });
+  },
+
+  setTabLanguage: (id, language) => {
+    set((state) => {
+      const tabs = state.tabs.map((t) =>
+        t.id === id ? { ...t, language } : t,
       );
       setItem(TABS_KEY, { tabs, activeTabId: state.activeTabId });
       return { tabs };

@@ -7,6 +7,9 @@ import {
 } from "@/lib/frida.ts";
 import { useConnectionStore } from "./connection.ts";
 import { useConsoleStore } from "./console.ts";
+import { useCrashesStore } from "./crashes.ts";
+import { useScriptsStore } from "./scripts.ts";
+import { transpileTS } from "@/lib/transpile.ts";
 
 interface SessionState {
   sessionActive: boolean;
@@ -107,6 +110,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         const reasonText = DETACH_REASONS[reason] || String(reason);
         if (crash) {
           append(`Session detached: ${reasonText} — ${crash.summary}`, "warning");
+          useCrashesStore.getState().addCrash(get().attachedName, get().attachedPid ?? 0, reasonText, crash);
           set({ ...CLEAN_STATE, lastCrash: crash });
         } else {
           append(`Session detached: ${reasonText}`, "warning");
@@ -165,6 +169,19 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     const { scriptRuntime } = get();
     set({ busy: true, busyLabel: "Loading script..." });
 
+    const activeTab = useScriptsStore.getState().getActiveTab();
+    let finalSource = source;
+    if (activeTab?.language === "typescript") {
+      try {
+        set({ busyLabel: "Transpiling TypeScript..." });
+        finalSource = await transpileTS(source);
+      } catch (err) {
+        append(`TypeScript error: ${(err as Error).message}`, "error");
+        set({ busy: false, busyLabel: "" });
+        return;
+      }
+    }
+
     try {
       const opts: { name?: string; runtime?: string } = {};
       if (scriptName) {
@@ -173,7 +190,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       if (scriptRuntime !== "default") {
         opts.runtime = scriptRuntime;
       }
-      currentScript = await abortable(currentSession.createScript(source, opts));
+      currentScript = await abortable(currentSession.createScript(finalSource, opts));
       currentScript.message.connect((message) => {
         if (message.type === "send") {
           const payload =

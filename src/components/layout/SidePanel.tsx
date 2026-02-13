@@ -7,6 +7,9 @@ import MemoryViewer from "@/components/sidebar/MemoryViewer.tsx";
 import SearchPanel from "@/components/sidebar/SearchPanel.tsx";
 import BookmarksPanel from "@/components/sidebar/BookmarksPanel.tsx";
 import MonitorsPanel from "@/components/sidebar/MonitorsPanel.tsx";
+import CrashesPanel from "@/components/sidebar/CrashesPanel.tsx";
+import StalkerPanel from "@/components/sidebar/StalkerPanel.tsx";
+import InterceptorPanel from "@/components/sidebar/InterceptorPanel.tsx";
 
 const LABELS: Record<Activity, string> = {
   scripts: "Scripts",
@@ -16,6 +19,9 @@ const LABELS: Record<Activity, string> = {
   search: "Search",
   bookmarks: "Bookmarks",
   monitors: "Monitors",
+  crashes: "Crashes",
+  stalker: "Stalker",
+  interceptor: "Interceptor",
 };
 
 interface Props {
@@ -64,6 +70,9 @@ export default function SidePanel({ onLoadScript }: Props) {
       {activeActivity === "search" && <SearchPanel />}
       {activeActivity === "bookmarks" && <BookmarksPanel />}
       {activeActivity === "monitors" && <MonitorsPanel />}
+      {activeActivity === "crashes" && <CrashesPanel />}
+      {activeActivity === "stalker" && <StalkerPanel />}
+      {activeActivity === "interceptor" && <InterceptorPanel />}
     </div>
   );
 }

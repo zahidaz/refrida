@@ -9,6 +9,7 @@ import {
   type RangeInfo,
 } from "@/stores/modules.ts";
 import { useSessionStore } from "@/stores/session.ts";
+import { useInterceptorStore } from "@/stores/interceptor.ts";
 import { copyToClipboard } from "@/lib/clipboard.ts";
 import { navigateToMemory, navigateToDisasm } from "@/lib/navigation.ts";
 
@@ -84,7 +85,23 @@ function TypeBadge({ type }: { type: string }) {
   );
 }
 
-function ExportsView({ items, filter }: { items: ExportInfo[]; filter: string }) {
+function HookBtn({ moduleName, exportName, address }: { moduleName: string; exportName: string; address: string }) {
+  return (
+    <button
+      className="text-[9px] px-1 shrink-0 icon-btn"
+      style={{ color: "#a855f7" }}
+      onClick={(e) => {
+        e.stopPropagation();
+        useInterceptorStore.getState().quickHook(moduleName, exportName, address);
+      }}
+      title="Quick hook"
+    >
+      <i className="fa-solid fa-anchor" style={{ fontSize: 8 }} />
+    </button>
+  );
+}
+
+function ExportsView({ items, filter, moduleName }: { items: ExportInfo[]; filter: string; moduleName: string }) {
   const filtered = useMemo(() => {
     const q = filter.toLowerCase();
     return q ? items.filter((e) => e.name.toLowerCase().includes(q)) : items;
@@ -96,6 +113,7 @@ function ExportsView({ items, filter }: { items: ExportInfo[]; filter: string })
         <div key={i} className="flex items-center gap-2 px-3 pl-8 py-0.5 text-[11px] hover-row">
           <TypeBadge type={exp.type} />
           <span className="flex-1 truncate" style={{ color: "var(--text-primary)" }}>{exp.name}</span>
+          {exp.type === "function" && <HookBtn moduleName={moduleName} exportName={exp.name} address={exp.address} />}
           {exp.type === "function" && <DisasmBtn address={exp.address} />}
           <MemoryJumpBtn address={exp.address} />
           <AddressCell address={exp.address} />
@@ -198,7 +216,7 @@ function EmptyMessage({ text }: { text: string }) {
   );
 }
 
-function ModuleDetail({ moduleKey }: { moduleKey: string }) {
+function ModuleDetail({ moduleKey, moduleName }: { moduleKey: string; moduleName: string }) {
   const state = useModulesStore();
   const { moduleTab, loadingDetail, detailFilter, exports, imports, symbols, ranges } = state;
 
@@ -216,7 +234,7 @@ function ModuleDetail({ moduleKey }: { moduleKey: string }) {
       return <EmptyMessage text={`Loading ${moduleTab}...`} />;
     }
     switch (moduleTab) {
-      case "exports": return <ExportsView items={exports[moduleKey] ?? []} filter={detailFilter} />;
+      case "exports": return <ExportsView items={exports[moduleKey] ?? []} filter={detailFilter} moduleName={moduleName} />;
       case "imports": return <ImportsView items={imports[moduleKey] ?? []} filter={detailFilter} />;
       case "symbols": return <SymbolsView items={symbols[moduleKey] ?? []} filter={detailFilter} />;
       case "sections": return <SectionsView items={ranges[moduleKey] ?? []} filter={detailFilter} />;
@@ -381,7 +399,7 @@ export default function ModuleBrowser() {
                   {formatSize(mod.size)}
                 </span>
               </div>
-              {state.expandedModule === mod.base && <ModuleDetail moduleKey={mod.base} />}
+              {state.expandedModule === mod.base && <ModuleDetail moduleKey={mod.base} moduleName={mod.name} />}
             </div>
           ))
         )}

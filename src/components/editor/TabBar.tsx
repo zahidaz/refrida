@@ -24,8 +24,10 @@ export default function TabBar({ editorRef, onRun }: Props) {
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const setTabLanguage = useScriptsStore((s) => s.setTabLanguage);
   const activeTab = tabs.find((t) => t.id === activeTabId);
   const isCodeTab = activeTab?.type === "code" || !activeTab?.type;
+  const activeLanguage = activeTab?.language ?? "javascript";
 
   useEffect(() => {
     if (editingId && inputRef.current) {
@@ -194,6 +196,30 @@ export default function TabBar({ editorRef, onRun }: Props) {
 
       {isCodeTab && (
         <div className="flex items-center gap-1 px-2 shrink-0">
+          <div className="flex rounded overflow-hidden mr-1" style={{ border: "1px solid var(--border)" }}>
+            <button
+              onClick={() => setTabLanguage(activeTabId, "javascript")}
+              className="text-[9px] px-1.5 py-0.5 font-medium"
+              style={{
+                background: activeLanguage === "javascript" ? "var(--accent)" : "transparent",
+                color: activeLanguage === "javascript" ? "white" : "var(--text-muted)",
+              }}
+              title="JavaScript"
+            >
+              JS
+            </button>
+            <button
+              onClick={() => setTabLanguage(activeTabId, "typescript")}
+              className="text-[9px] px-1.5 py-0.5 font-medium"
+              style={{
+                background: activeLanguage === "typescript" ? "var(--accent)" : "transparent",
+                color: activeLanguage === "typescript" ? "white" : "var(--text-muted)",
+              }}
+              title="TypeScript"
+            >
+              TS
+            </button>
+          </div>
           {busy ? (
             <>
               <span

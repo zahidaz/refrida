@@ -432,6 +432,84 @@ try {
 `;
 }
 
+export function stalkerTraceScript(threadId: string, eventTypes: Record<string, boolean>): string {
+  const evCall = eventTypes.call !== false;
+  const evRet = !!eventTypes.ret;
+  const evExec = !!eventTypes.exec;
+  const evBlock = !!eventTypes.block;
+  const evCompile = !!eventTypes.compile;
+
+  return `
+try {
+  var tid = ${threadId || "Process.getCurrentThreadId()"};
+  var batch = [];
+  var flushTimer = null;
+
+  function flushBatch() {
+    if (batch.length === 0) return;
+    for (var i = 0; i < batch.length; i++) {
+      send(batch[i]);
+    }
+    batch = [];
+  }
+
+  function queueEvent(ev) {
+    batch.push(ev);
+    if (batch.length >= 50) {
+      flushBatch();
+    } else if (!flushTimer) {
+      flushTimer = setTimeout(function() {
+        flushTimer = null;
+        flushBatch();
+      }, 100);
+    }
+  }
+
+  function resolveAddr(addr) {
+    var p = ptr(addr);
+    var mod = Process.findModuleByAddress(p);
+    var sym = null;
+    try { sym = DebugSymbol.fromAddress(p).name; } catch(e) {}
+    return { module: mod ? mod.name : null, symbol: sym || null };
+  }
+
+  Stalker.follow(tid, {
+    events: {
+      call: ${evCall},
+      ret: ${evRet},
+      exec: ${evExec},
+      block: ${evBlock},
+      compile: ${evCompile}
+    },
+    onReceive: function(rawEvents) {
+      var parsed = Stalker.parse(rawEvents, { stringify: false, annotate: true });
+      for (var i = 0; i < parsed.length; i++) {
+        var ev = parsed[i];
+        var evType = ev[0];
+        var from = ev[1];
+        var info = resolveAddr(from);
+        var entry = {
+          type: evType,
+          address: from.toString(),
+          module: info.module,
+          symbol: info.symbol,
+          ts: Date.now()
+        };
+        if (ev[2] !== undefined) {
+          entry.target = ev[2].toString();
+        }
+        queueEvent(entry);
+      }
+    }
+  });
+
+  send({ event: "__started__" });
+} catch(e) {
+  send({ type: "__utility_error__", message: e.message || String(e) });
+}
+`;
+}
+
 export function evalScript(code: string): string {
   return `
 try {

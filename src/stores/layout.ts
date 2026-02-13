@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { getItem, setItem } from "@/lib/storage.ts";
 
-export type Activity = "scripts" | "settings" | "modules" | "memory" | "search" | "bookmarks" | "monitors";
+export type Activity = "scripts" | "settings" | "modules" | "memory" | "search" | "bookmarks" | "monitors" | "crashes" | "stalker" | "interceptor";
 
 interface LayoutState {
   activeActivity: Activity;

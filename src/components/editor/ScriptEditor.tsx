@@ -1,10 +1,11 @@
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useEffect } from "react";
 import Editor, { type OnMount, type OnChange } from "@monaco-editor/react";
 import type { editor, languages } from "monaco-editor";
 import { useThemeStore } from "@/stores/theme.ts";
 import { useScriptsStore } from "@/stores/scripts.ts";
 import { useSessionStore } from "@/stores/session.ts";
 import { getFridaCompletions } from "@/lib/fridaCompletions.ts";
+import { FRIDA_TYPE_DEFS } from "@/lib/fridaTypes.ts";
 import { useIsMobile } from "@/hooks/useIsMobile.ts";
 
 export type MonacoEditor = editor.IStandaloneCodeEditor;
@@ -20,13 +21,30 @@ export default function ScriptEditor({ editorRef, onCursorChange }: Props) {
   const dark = useThemeStore((s) => s.dark);
   const updateTabContent = useScriptsStore((s) => s.updateTabContent);
   const runScript = useSessionStore((s) => s.runScript);
+  const activeTab = useScriptsStore((s) => s.getActiveTab());
   const isMobile = useIsMobile();
   const mounted = useRef(false);
+  const monacoRef = useRef<typeof import("monaco-editor") | null>(null);
+
+  const language = activeTab?.language === "typescript" ? "typescript" : "javascript";
+
+  useEffect(() => {
+    const ed = editorRef.current;
+    const monaco = monacoRef.current;
+    if (!ed || !monaco) return;
+    const model = ed.getModel();
+    if (model) {
+      monaco.editor.setModelLanguage(model, language);
+    }
+  }, [language, editorRef]);
 
   const handleMount: OnMount = useCallback(
     (editor, monaco) => {
       editorRef.current = editor;
+      monacoRef.current = monaco;
       mounted.current = true;
+
+      (window as unknown as Record<string, unknown>).monaco = monaco;
 
       editor.onDidChangeCursorPosition((e) => {
         onCursorChange(e.position.lineNumber, e.position.column);
@@ -48,7 +66,7 @@ export default function ScriptEditor({ editorRef, onCursorChange }: Props) {
       if (!completionsRegistered) {
         completionsRegistered = true;
         const completions = getFridaCompletions();
-        monaco.languages.registerCompletionItemProvider("javascript", {
+        const provider = {
           provideCompletionItems: (_model: unknown, position: { lineNumber: number; column: number }) => {
             const range = {
               startLineNumber: position.lineNumber,
@@ -63,12 +81,38 @@ export default function ScriptEditor({ editorRef, onCursorChange }: Props) {
               })) as languages.CompletionItem[],
             };
           },
+        };
+        monaco.languages.registerCompletionItemProvider("javascript", provider);
+        monaco.languages.registerCompletionItemProvider("typescript", provider);
+
+        monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+          target: monaco.languages.typescript.ScriptTarget.ES2020,
+          allowNonTsExtensions: true,
+          moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+          module: monaco.languages.typescript.ModuleKind.ESNext,
+          noEmit: true,
+          esModuleInterop: true,
+          allowJs: true,
+          strict: false,
         });
+
+        monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+          noSemanticValidation: false,
+          noSyntaxValidation: false,
+        });
+
+        monaco.languages.typescript.typescriptDefaults.addExtraLib(FRIDA_TYPE_DEFS, "frida.d.ts");
       }
 
       const tab = useScriptsStore.getState().getActiveTab();
       if (tab?.content) {
         editor.setValue(tab.content);
+      }
+
+      const tabLanguage = tab?.language === "typescript" ? "typescript" : "javascript";
+      const model = editor.getModel();
+      if (model) {
+        monaco.editor.setModelLanguage(model, tabLanguage);
       }
     },
     [editorRef, onCursorChange, runScript],
