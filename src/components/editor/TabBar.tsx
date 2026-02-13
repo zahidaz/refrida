@@ -126,11 +126,11 @@ export default function TabBar({ editorRef, onRun }: Props) {
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5 px-2 shrink-0">
+      <div className="flex items-center gap-1 px-2 shrink-0">
         <button
           onClick={onRun}
           disabled={!sessionActive}
-          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded disabled:opacity-30"
+          className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded disabled:opacity-30"
           style={{
             color: "white",
             background: scriptActive ? "var(--accent)" : "#16a34a",
@@ -139,7 +139,7 @@ export default function TabBar({ editorRef, onRun }: Props) {
         >
           <i
             className={`fa-solid ${scriptActive ? "fa-rotate-right" : "fa-play"}`}
-            style={{ fontSize: 10 }}
+            style={{ fontSize: 9 }}
           />
           {scriptActive ? "Re-run" : "Run"}
         </button>
@@ -147,14 +147,14 @@ export default function TabBar({ editorRef, onRun }: Props) {
         {scriptActive && (
           <button
             onClick={unloadScript}
-            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded"
+            className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded"
             style={{
               color: "#ef4444",
-              border: "1px solid rgba(239, 68, 68, 0.3)",
+              border: "1px solid rgba(239, 68, 68, 0.25)",
             }}
             title="Stop Script"
           >
-            <i className="fa-solid fa-stop" style={{ fontSize: 9 }} />
+            <i className="fa-solid fa-stop" style={{ fontSize: 8 }} />
             Stop
           </button>
         )}
