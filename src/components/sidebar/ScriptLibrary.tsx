@@ -1,7 +1,7 @@
 import { useScriptsStore } from "@/stores/scripts.ts";
 
 interface Props {
-  onLoadScript: (content: string) => void;
+  onLoadScript: (name: string, content: string) => void;
 }
 
 export default function ScriptLibrary({ onLoadScript }: Props) {
@@ -10,7 +10,7 @@ export default function ScriptLibrary({ onLoadScript }: Props) {
   function handleLoad(id: string) {
     const script = savedScripts.find((s) => s.id === id);
     if (script) {
-      onLoadScript(script.content);
+      onLoadScript(script.name, script.content);
     }
   }
 

@@ -1,7 +1,5 @@
 import { useConnectionStore } from "@/stores/connection.ts";
-import { useSessionStore } from "@/stores/session.ts";
 import { useProcessesStore } from "@/stores/processes.ts";
-import { useConsoleStore } from "@/stores/console.ts";
 import { useLayoutStore } from "@/stores/layout.ts";
 import Modal from "@/components/ui/Modal.tsx";
 
@@ -18,11 +16,8 @@ export default function ConnectionDialog() {
     connect,
     disconnect,
   } = useConnectionStore();
-  const sessionReset = useSessionStore((s) => s.reset);
-  const processesReset = useProcessesStore((s) => s.reset);
   const setProcesses = useProcessesStore((s) => s.setProcesses);
   const refreshApplications = useProcessesStore((s) => s.refreshApplications);
-  const appendConsole = useConsoleStore((s) => s.append);
   const { setConnectionDialogOpen, setProcessPickerOpen } = useLayoutStore();
 
   function close() {
@@ -40,10 +35,7 @@ export default function ConnectionDialog() {
   }
 
   function handleDisconnect() {
-    sessionReset();
-    processesReset();
     disconnect();
-    appendConsole("Disconnected.", "system");
     close();
   }
 

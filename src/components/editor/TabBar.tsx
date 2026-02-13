@@ -10,12 +10,14 @@ interface Props {
 }
 
 export default function TabBar({ editorRef, onRun }: Props) {
-  const { tabs, activeTabId, switchTab, addTab, closeTab, renameTab } =
+  const { tabs, activeTabId, switchTab, addTab, closeTab, renameTab, reorderTabs } =
     useScriptsStore();
-  const { sessionActive, scriptActive, unloadScript } = useSessionStore();
+  const { sessionActive, scriptActive, busy, busyLabel, unloadScript, cancelBusy } = useSessionStore();
   const { welcomeOpen, setWelcomeOpen } = useLayoutStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -31,9 +33,6 @@ export default function TabBar({ editorRef, onRun }: Props) {
 
   function handleSwitch(id: string) {
     if (welcomeOpen) setWelcomeOpen(false);
-    if (scriptActive) {
-      unloadScript();
-    }
     switchTab(id, getCurrentContent);
     const tab = useScriptsStore.getState().tabs.find((t) => t.id === id);
     if (tab && editorRef.current) {
@@ -77,6 +76,33 @@ export default function TabBar({ editorRef, onRun }: Props) {
     if (e.key === "Escape") setEditingId(null);
   }
 
+  function handleDragStart(e: React.DragEvent, id: string) {
+    setDragId(id);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", id);
+  }
+
+  function handleDragOver(e: React.DragEvent, id: string) {
+    if (!dragId || dragId === id) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDropTarget(id);
+  }
+
+  function handleDrop(e: React.DragEvent, id: string) {
+    e.preventDefault();
+    if (dragId && dragId !== id) {
+      reorderTabs(dragId, id);
+    }
+    setDragId(null);
+    setDropTarget(null);
+  }
+
+  function handleDragEnd() {
+    setDragId(null);
+    setDropTarget(null);
+  }
+
   return (
     <div
       className="flex items-center border-b"
@@ -87,8 +113,18 @@ export default function TabBar({ editorRef, onRun }: Props) {
           <div
             key={tab.id}
             className={`tab-item ${tab.id === activeTabId ? "active" : ""}`}
+            style={{
+              opacity: dragId === tab.id ? 0.4 : 1,
+              borderLeft: dropTarget === tab.id ? "2px solid var(--accent)" : undefined,
+            }}
             onClick={() => handleSwitch(tab.id)}
             onDoubleClick={(e) => startRename(e, tab.id)}
+            draggable={editingId !== tab.id}
+            onDragStart={(e) => handleDragStart(e, tab.id)}
+            onDragOver={(e) => handleDragOver(e, tab.id)}
+            onDrop={(e) => handleDrop(e, tab.id)}
+            onDragEnd={handleDragEnd}
+            onDragLeave={() => setDropTarget(null)}
           >
             {editingId === tab.id ? (
               <input
@@ -127,7 +163,28 @@ export default function TabBar({ editorRef, onRun }: Props) {
       </div>
 
       <div className="flex items-center gap-1 px-2 shrink-0">
-        {scriptActive ? (
+        {busy ? (
+          <>
+            <span
+              className="text-[10px] px-1"
+              style={{ color: "var(--text-muted)" }}
+            >
+              {busyLabel}
+            </span>
+            <button
+              onClick={cancelBusy}
+              className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded"
+              style={{
+                color: "#ef4444",
+                border: "1px solid rgba(239, 68, 68, 0.25)",
+              }}
+              title="Cancel"
+            >
+              <i className="fa-solid fa-xmark" style={{ fontSize: 9 }} />
+              Cancel
+            </button>
+          </>
+        ) : scriptActive ? (
           <>
             <button
               onClick={unloadScript}

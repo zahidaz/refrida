@@ -16,16 +16,61 @@ interface SessionState {
   attachedName: string;
   scriptRuntime: string;
   lastCrash: FridaCrash | null;
+  busy: boolean;
+  busyLabel: string;
   setScriptRuntime: (r: string) => void;
   attachToProcess: (pid: number, name: string) => Promise<void>;
   runScript: (source: string, scriptName?: string) => Promise<void>;
   unloadScript: () => Promise<void>;
   detachSession: () => Promise<void>;
+  cancelBusy: () => void;
   reset: () => void;
 }
 
 let currentSession: FridaSession | null = null;
 let currentScript: FridaScript | null = null;
+let busyAbort: AbortController | null = null;
+
+async function cleanupScript(silent?: boolean) {
+  if (!currentScript) return;
+  try {
+    await currentScript.unload();
+  } catch {}
+  currentScript = null;
+  if (!silent) {
+    useConsoleStore.getState().append("Script unloaded.", "system");
+  }
+}
+
+function cleanupSession() {
+  if (currentSession && !currentSession.isDetached) {
+    currentSession.detach();
+  }
+  currentSession = null;
+  currentScript = null;
+}
+
+function abortable<T>(promise: Promise<T>): Promise<T> {
+  busyAbort = new AbortController();
+  const { signal } = busyAbort;
+  return Promise.race([
+    promise,
+    new Promise<never>((_resolve, reject) => {
+      signal.addEventListener("abort", () => reject(new DOMException("Cancelled", "AbortError")));
+    }),
+  ]);
+}
+
+const CLEAN_STATE = {
+  sessionActive: false,
+  scriptActive: false,
+  attachedPid: null,
+  attachedName: "",
+  sessionInfoText: "",
+  lastCrash: null,
+  busy: false,
+  busyLabel: "",
+} as const;
 
 export const useSessionStore = create<SessionState>((set, get) => ({
   sessionActive: false,
@@ -35,46 +80,34 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   attachedName: "",
   scriptRuntime: "default",
   lastCrash: null,
+  busy: false,
+  busyLabel: "",
 
   setScriptRuntime: (scriptRuntime) => set({ scriptRuntime }),
 
   attachToProcess: async (pid, name) => {
     const client = useConnectionStore.getState().getClient();
-    if (!client) return;
+    if (!client || get().busy) return;
     const append = useConsoleStore.getState().append;
 
-    if (currentScript) {
-      try {
-        await currentScript.unload();
-      } catch {}
-      currentScript = null;
-      set({ scriptActive: false });
-    }
-    if (currentSession && !currentSession.isDetached) {
-      currentSession.detach();
-    }
+    set({ busy: true, busyLabel: "Attaching..." });
+
+    await cleanupScript(true);
+    set({ scriptActive: false });
+    cleanupSession();
 
     append(`Attaching to ${name} (PID ${pid})...`, "system");
     try {
-      currentSession = await client.attach(pid);
+      currentSession = await abortable(client.attach(pid));
       currentSession.detached.connect((reason, crash) => {
         const reasonText = DETACH_REASONS[reason] || String(reason);
         if (crash) {
-          set({ lastCrash: crash });
-          append(
-            `Session detached: ${reasonText} — ${crash.summary}`,
-            "warning",
-          );
+          append(`Session detached: ${reasonText} — ${crash.summary}`, "warning");
+          set({ ...CLEAN_STATE, lastCrash: crash });
         } else {
           append(`Session detached: ${reasonText}`, "warning");
+          set(CLEAN_STATE);
         }
-        set({
-          sessionActive: false,
-          scriptActive: false,
-          attachedPid: null,
-          attachedName: "",
-          sessionInfoText: "",
-        });
         currentSession = null;
         currentScript = null;
       });
@@ -84,10 +117,20 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         attachedName: name,
         sessionInfoText: `${name} (PID ${pid})`,
         lastCrash: null,
+        busy: false,
+        busyLabel: "",
       });
       append(`Attached to ${name} (PID ${pid})`, "system");
     } catch (err) {
-      append(`Attach failed: ${(err as Error).message}`, "error");
+      if ((err as DOMException).name === "AbortError") {
+        append("Attach cancelled.", "warning");
+        set(CLEAN_STATE);
+      } else {
+        append(`Attach failed: ${(err as Error).message}`, "error");
+        set({ busy: false, busyLabel: "" });
+      }
+    } finally {
+      busyAbort = null;
     }
   },
 
@@ -98,12 +141,15 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         .append("No active session. Attach to a process first.", "error");
       return;
     }
+    if (!useConnectionStore.getState().connected) {
+      useConsoleStore.getState().append("Not connected.", "error");
+      return;
+    }
+    if (get().busy) return;
 
     if (currentScript) {
-      try {
-        await currentScript.unload();
-      } catch {}
-      currentScript = null;
+      await cleanupScript(true);
+      set({ scriptActive: false });
     }
 
     if (!source.trim()) {
@@ -113,13 +159,14 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
     const append = useConsoleStore.getState().append;
     const { scriptRuntime } = get();
+    set({ busy: true, busyLabel: "Loading script..." });
 
     try {
       const opts: { runtime?: string } = {};
       if (scriptRuntime !== "default") {
         opts.runtime = scriptRuntime;
       }
-      currentScript = await currentSession.createScript(source, opts);
+      currentScript = await abortable(currentSession.createScript(source, opts));
       currentScript.message.connect((message) => {
         if (message.type === "send") {
           const payload =
@@ -144,70 +191,60 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         set({ scriptActive: false });
         currentScript = null;
       });
-      await currentScript.load();
-      set({ scriptActive: true });
+      await abortable(currentScript.load());
+      set({ scriptActive: true, busy: false, busyLabel: "" });
       useConsoleStore.getState().bumpRunId();
       const label = scriptName ? `Script loaded (${scriptName}).` : "Script loaded.";
       append(label, "system");
     } catch (err) {
-      append(`Script error: ${(err as Error).message}`, "error");
-      currentScript = null;
+      if ((err as DOMException).name === "AbortError") {
+        append("Script loading cancelled.", "warning");
+        if (currentScript) {
+          try { await currentScript.unload(); } catch {}
+        }
+        currentScript = null;
+        set({ scriptActive: false, busy: false, busyLabel: "" });
+      } else {
+        append(`Script error: ${(err as Error).message}`, "error");
+        currentScript = null;
+        set({ busy: false, busyLabel: "" });
+      }
+    } finally {
+      busyAbort = null;
     }
   },
 
   unloadScript: async () => {
     if (!currentScript) return;
-    const append = useConsoleStore.getState().append;
-    try {
-      await currentScript.unload();
-      append("Script unloaded.", "system");
-    } catch (err) {
-      append(`Unload failed: ${(err as Error).message}`, "error");
-    }
-    currentScript = null;
+    await cleanupScript();
     set({ scriptActive: false });
   },
 
   detachSession: async () => {
     const append = useConsoleStore.getState().append;
-    if (currentScript) {
-      try {
-        await currentScript.unload();
-      } catch {}
-      currentScript = null;
-      set({ scriptActive: false });
-    }
+    await cleanupScript(true);
     if (currentSession && !currentSession.isDetached) {
       currentSession.detach();
       append("Detached from session.", "system");
     }
     currentSession = null;
-    set({
-      sessionActive: false,
-      attachedPid: null,
-      attachedName: "",
-      sessionInfoText: "",
-    });
+    currentScript = null;
+    set(CLEAN_STATE);
+  },
+
+  cancelBusy: () => {
+    if (busyAbort) {
+      busyAbort.abort();
+      busyAbort = null;
+    }
   },
 
   reset: () => {
-    if (currentScript) {
-      try {
-        currentScript.unload();
-      } catch {}
-      currentScript = null;
+    if (busyAbort) {
+      busyAbort.abort();
+      busyAbort = null;
     }
-    if (currentSession && !currentSession.isDetached) {
-      currentSession.detach();
-    }
-    currentSession = null;
-    set({
-      sessionActive: false,
-      scriptActive: false,
-      attachedPid: null,
-      attachedName: "",
-      sessionInfoText: "",
-      lastCrash: null,
-    });
+    cleanupSession();
+    set(CLEAN_STATE);
   },
 }));

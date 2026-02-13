@@ -1,10 +1,9 @@
 import { useLayoutStore } from "@/stores/layout.ts";
 import { useConnectionStore } from "@/stores/connection.ts";
 import { TEMPLATES } from "@/lib/templates.ts";
-import { useScriptsStore } from "@/stores/scripts.ts";
 
 interface Props {
-  onLoadScript: (code: string) => void;
+  onLoadScript: (name: string, code: string) => void;
 }
 
 const QUICK_START_STEPS = [
@@ -45,13 +44,11 @@ const SHORTCUTS = [
 export default function WelcomeScreen({ onLoadScript }: Props) {
   const setConnectionDialogOpen = useLayoutStore((s) => s.setConnectionDialogOpen);
   const connected = useConnectionStore((s) => s.connected);
-  const syncCurrentTab = useScriptsStore((s) => s.syncCurrentTab);
 
   function loadTemplate(key: string) {
-    const code = TEMPLATES[key]?.code;
-    if (code) {
-      onLoadScript(code);
-      syncCurrentTab(code);
+    const t = TEMPLATES[key];
+    if (t) {
+      onLoadScript(t.label, t.code);
     }
   }
 

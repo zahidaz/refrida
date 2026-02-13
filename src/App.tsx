@@ -72,6 +72,13 @@ export default function App() {
     useScriptsStore.getState().syncCurrentTab(text);
   }, []);
 
+  const handleLibraryLoad = useCallback((name: string, content: string) => {
+    if (welcomeOpen) setWelcomeOpen(false);
+    const getCurrentContent = () => editorRef.current?.getValue() ?? "";
+    useScriptsStore.getState().openInNewTab(name, content, getCurrentContent);
+    editorRef.current?.setValue(content);
+  }, [welcomeOpen, setWelcomeOpen]);
+
   const handleImport = useCallback(() => {
     importFile(handleEditorLoad);
   }, [handleEditorLoad]);
@@ -129,7 +136,7 @@ export default function App() {
               }}
               className="overflow-hidden"
             >
-              <SidePanel onLoadScript={handleEditorLoad} />
+              <SidePanel onLoadScript={handleLibraryLoad} />
             </div>
             <div
               className="resize-handle-x"
@@ -151,8 +158,8 @@ export default function App() {
             <div className="flex-1 overflow-hidden">
               {welcomeOpen ? (
                 <WelcomeScreen
-                  onLoadScript={(code) => {
-                    handleEditorLoad(code);
+                  onLoadScript={(name, code) => {
+                    handleLibraryLoad(name, code);
                     setWelcomeOpen(false);
                   }}
                 />

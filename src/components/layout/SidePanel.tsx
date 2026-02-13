@@ -3,7 +3,7 @@ import ScriptLibrary from "@/components/sidebar/ScriptLibrary.tsx";
 import SettingsPanel from "@/components/sidebar/SettingsPanel.tsx";
 
 interface Props {
-  onLoadScript: (content: string) => void;
+  onLoadScript: (name: string, content: string) => void;
 }
 
 export default function SidePanel({ onLoadScript }: Props) {

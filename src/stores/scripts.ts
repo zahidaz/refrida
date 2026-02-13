@@ -45,6 +45,8 @@ interface ScriptsState {
   saveToLibrary: (content: string, name: string) => void;
   loadFromLibrary: (id: string) => string | null;
   deleteFromLibrary: (id: string) => void;
+  openInNewTab: (name: string, content: string, getCurrentContent: () => string) => void;
+  reorderTabs: (fromId: string, toId: string) => void;
   updateTabContent: (content: string) => void;
   getActiveTab: () => ScriptTab | undefined;
 }
@@ -103,9 +105,12 @@ export const useScriptsStore = create<ScriptsState>((set, get) => ({
         : t,
     );
     const id = generateId();
+    const existing = new Set(tabs.map((t) => t.name));
+    let n = 1;
+    while (existing.has(`Script ${n}`)) n++;
     const newTab: ScriptTab = {
       id,
-      name: `Script ${tabs.length + 1}`,
+      name: `Script ${n}`,
       content: "",
     };
     const newTabs = [...tabs, newTab];
@@ -169,6 +174,34 @@ export const useScriptsStore = create<ScriptsState>((set, get) => ({
       const savedScripts = state.savedScripts.filter((s) => s.id !== id);
       setItem(SCRIPTS_KEY, savedScripts);
       return { savedScripts };
+    });
+  },
+
+  openInNewTab: (name, content, getCurrentContent) => {
+    const state = get();
+    const tabs = state.tabs.map((t) =>
+      t.id === state.activeTabId
+        ? { ...t, content: getCurrentContent() }
+        : t,
+    );
+    const id = generateId();
+    const newTab: ScriptTab = { id, name, content };
+    const newTabs = [...tabs, newTab];
+    set({ tabs: newTabs, activeTabId: id });
+    setItem(TABS_KEY, { tabs: newTabs, activeTabId: id });
+  },
+
+  reorderTabs: (fromId, toId) => {
+    if (fromId === toId) return;
+    set((state) => {
+      const tabs = [...state.tabs];
+      const fromIdx = tabs.findIndex((t) => t.id === fromId);
+      const toIdx = tabs.findIndex((t) => t.id === toId);
+      if (fromIdx === -1 || toIdx === -1) return state;
+      const [moved] = tabs.splice(fromIdx, 1);
+      tabs.splice(toIdx, 0, moved);
+      setItem(TABS_KEY, { tabs, activeTabId: state.activeTabId });
+      return { tabs };
     });
   },
 

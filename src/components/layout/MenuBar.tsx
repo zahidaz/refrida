@@ -26,7 +26,7 @@ export default function MenuBar({ editorRef, onSave }: Props) {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const barRef = useRef<HTMLDivElement>(null);
 
-  const { syncCurrentTab, addTab, getActiveTab } =
+  const { syncCurrentTab, addTab, openInNewTab, getActiveTab } =
     useScriptsStore();
   const {
     sessionActive,
@@ -84,8 +84,10 @@ export default function MenuBar({ editorRef, onSave }: Props) {
       label: t.label,
       action: () => {
         close();
-        editorRef.current?.setValue(TEMPLATES[key].code);
-        syncCurrentTab(TEMPLATES[key].code);
+        const code = TEMPLATES[key].code;
+        const getCurrentContent = () => editorRef.current?.getValue() ?? "";
+        openInNewTab(t.label, code, getCurrentContent);
+        editorRef.current?.setValue(code);
       },
     }),
   );

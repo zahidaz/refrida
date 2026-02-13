@@ -8,6 +8,8 @@ import {
 import { getItem, setItem } from "@/lib/storage.ts";
 import { useConsoleStore } from "./console.ts";
 import { addToHistory } from "@/components/sidebar/SettingsPanel.tsx";
+import { useSessionStore } from "./session.ts";
+import { useProcessesStore } from "./processes.ts";
 
 interface ConnectionSettings {
   serverUrl: string;
@@ -152,8 +154,11 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
     },
 
     disconnect: () => {
+      useSessionStore.getState().reset();
+      useProcessesStore.getState().reset();
       client = null;
-      set({ connected: false, deviceInfo: null });
+      set({ connected: false, deviceInfo: null, spawnTarget: "" });
+      useConsoleStore.getState().append("Disconnected.", "system");
     },
 
     spawnProcess: async () => {

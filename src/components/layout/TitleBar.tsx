@@ -1,8 +1,6 @@
 import { useConnectionStore } from "@/stores/connection.ts";
 import { useSessionStore } from "@/stores/session.ts";
-import { useProcessesStore } from "@/stores/processes.ts";
 import { useThemeStore } from "@/stores/theme.ts";
-import { useConsoleStore } from "@/stores/console.ts";
 import { useLayoutStore } from "@/stores/layout.ts";
 import MenuBar from "./MenuBar.tsx";
 import DeviceBadges from "@/components/ui/DeviceBadges.tsx";
@@ -21,24 +19,14 @@ export default function TitleBar({ editorRef, onSave }: Props) {
     busy,
     disconnect,
   } = useConnectionStore();
-  const sessionReset = useSessionStore((s) => s.reset);
   const sessionActive = useSessionStore((s) => s.sessionActive);
   const detachSession = useSessionStore((s) => s.detachSession);
   const sessionInfoText = useSessionStore((s) => s.sessionInfoText);
-  const processesReset = useProcessesStore((s) => s.reset);
-  const appendConsole = useConsoleStore((s) => s.append);
   const { dark, toggle: toggleTheme } = useThemeStore();
   const {
     setConnectionDialogOpen,
     setProcessPickerOpen,
   } = useLayoutStore();
-
-  function handleDisconnect() {
-    sessionReset();
-    processesReset();
-    disconnect();
-    appendConsole("Disconnected.", "system");
-  }
 
   function handleConnect() {
     setConnectionDialogOpen(true);
@@ -93,10 +81,10 @@ export default function TitleBar({ editorRef, onSave }: Props) {
           border: "1px solid var(--accent)",
           background: "var(--accent-soft)",
         }}
-        title="Attach to Process"
+        title={sessionActive ? "Switch Process" : "Attach to Process"}
       >
         <i className="fa-solid fa-crosshairs" style={{ fontSize: 10 }} />
-        Attach
+        {sessionActive ? "Switch" : "Attach"}
       </button>
 
       <div
@@ -121,7 +109,7 @@ export default function TitleBar({ editorRef, onSave }: Props) {
           </span>
           {deviceInfo && <DeviceBadges info={deviceInfo} />}
           <button
-            onClick={handleDisconnect}
+            onClick={disconnect}
             disabled={busy}
             className={`text-xs px-2 py-0.5 rounded font-medium flex items-center gap-1.5 ${busy ? "loading" : ""}`}
             style={{
