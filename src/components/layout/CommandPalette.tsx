@@ -144,7 +144,7 @@ export default function CommandPalette({ onRun }: Props) {
 
   return (
     <Modal onClose={close} align="top"
-      className="w-[480px] max-h-[60vh] rounded-lg border overflow-hidden"
+      className="w-full max-w-[480px] max-h-[60vh] rounded-lg border overflow-hidden"
       style={{
         background: "var(--bg-primary)",
         borderColor: "var(--border)",

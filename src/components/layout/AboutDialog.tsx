@@ -32,7 +32,7 @@ export default function AboutDialog() {
   return (
     <Modal onClose={() => setAboutOpen(false)}>
       <div
-        className="rounded-lg border p-6 w-[360px] flex flex-col items-center gap-4"
+        className="rounded-lg border p-6 w-full max-w-[360px] flex flex-col items-center gap-4"
         style={{
           background: "var(--bg-primary)",
           borderColor: "var(--border)",

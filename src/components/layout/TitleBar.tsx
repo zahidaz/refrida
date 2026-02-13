@@ -2,6 +2,7 @@ import { useConnectionStore } from "@/stores/connection.ts";
 import { useSessionStore } from "@/stores/session.ts";
 import { useThemeStore } from "@/stores/theme.ts";
 import { useLayoutStore } from "@/stores/layout.ts";
+import { useIsMobile } from "@/hooks/useIsMobile.ts";
 import MenuBar from "./MenuBar.tsx";
 import DeviceBadges from "@/components/ui/DeviceBadges.tsx";
 import type { MonacoEditor } from "@/components/editor/ScriptEditor.tsx";
@@ -26,7 +27,9 @@ export default function TitleBar({ editorRef, onSave }: Props) {
   const {
     setConnectionDialogOpen,
     setProcessPickerOpen,
+    setCommandPaletteOpen,
   } = useLayoutStore();
+  const isMobile = useIsMobile();
 
   function handleConnect() {
     setConnectionDialogOpen(true);
@@ -34,13 +37,13 @@ export default function TitleBar({ editorRef, onSave }: Props) {
 
   return (
     <div
-      className="flex items-center gap-1 px-2 py-0.5 border-b"
+      className="flex items-center gap-1 px-2 py-0.5 border-b overflow-hidden"
       style={{
         background: "var(--bg-secondary)",
         borderColor: "var(--border)",
       }}
     >
-      <span className="text-sm font-bold font-mono select-none mr-1">
+      <span className="text-sm font-bold font-mono select-none shrink-0 mr-1">
         <span style={{ color: "var(--accent-text)" }}>re</span>
         <span style={{ color: "var(--text-primary)" }}>Frida</span>
         <span
@@ -54,21 +57,32 @@ export default function TitleBar({ editorRef, onSave }: Props) {
         </span>
       </span>
 
-      <MenuBar editorRef={editorRef} onSave={onSave} />
+      {isMobile ? (
+        <button
+          onClick={() => setCommandPaletteOpen(true)}
+          className="titlebar-btn shrink-0"
+          style={{ color: "var(--text-secondary)" }}
+          title="Menu"
+        >
+          <i className="fa-solid fa-bars" style={{ fontSize: 13 }} />
+        </button>
+      ) : (
+        <MenuBar editorRef={editorRef} onSave={onSave} />
+      )}
 
-      <div className="flex-1" />
+      <div className="flex-1 min-w-0" />
 
-      {sessionActive && (
+      {!isMobile && sessionActive && (
         <>
           <span
-            className="text-[10px] px-1"
+            className="text-[10px] px-1 truncate max-w-40"
             style={{ color: "var(--text-muted)" }}
           >
             {sessionInfoText}
           </span>
           <button
             onClick={detachSession}
-            className="text-xs px-2 py-0.5 rounded font-medium flex items-center gap-1.5"
+            className="text-xs px-2 py-0.5 rounded font-medium flex items-center gap-1.5 shrink-0"
             style={{
               color: "#d97706",
               border: "1px solid rgba(217, 119, 6, 0.3)",
@@ -84,7 +98,7 @@ export default function TitleBar({ editorRef, onSave }: Props) {
       <button
         onClick={() => setProcessPickerOpen(true)}
         disabled={!connected}
-        className="text-xs px-2 py-0.5 rounded font-medium flex items-center gap-1.5 disabled:opacity-30"
+        className="text-xs px-2 py-0.5 rounded font-medium flex items-center gap-1.5 disabled:opacity-30 shrink-0"
         style={{
           color: "var(--accent-text)",
           border: "1px solid var(--accent)",
@@ -96,31 +110,35 @@ export default function TitleBar({ editorRef, onSave }: Props) {
         {sessionActive ? "Switch" : "Attach"}
       </button>
 
-      <div
-        className="w-px h-4 mx-1"
-        style={{ background: "var(--border)" }}
-      />
+      {!isMobile && (
+        <div
+          className="w-px h-4 mx-1 shrink-0"
+          style={{ background: "var(--border)" }}
+        />
+      )}
 
       {connected ? (
         <>
-          <span
-            className="text-xs flex items-center gap-1.5 px-2 py-0.5 rounded"
-            style={{
-              color: "#22c55e",
-              background: "rgba(34, 197, 94, 0.08)",
-            }}
-          >
+          {!isMobile && (
             <span
-              className="inline-block w-1.5 h-1.5 rounded-full"
-              style={{ background: "#22c55e" }}
-            />
-            {serverUrl}
-          </span>
-          {deviceInfo && <DeviceBadges info={deviceInfo} />}
+              className="text-xs flex items-center gap-1.5 px-2 py-0.5 rounded truncate max-w-48 shrink"
+              style={{
+                color: "#22c55e",
+                background: "rgba(34, 197, 94, 0.08)",
+              }}
+            >
+              <span
+                className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
+                style={{ background: "#22c55e" }}
+              />
+              {serverUrl}
+            </span>
+          )}
+          {!isMobile && deviceInfo && <DeviceBadges info={deviceInfo} />}
           <button
             onClick={disconnect}
             disabled={busy}
-            className={`text-xs px-2 py-0.5 rounded font-medium flex items-center gap-1.5 ${busy ? "loading" : ""}`}
+            className={`text-xs px-2 py-0.5 rounded font-medium flex items-center gap-1.5 shrink-0 ${busy ? "loading" : ""}`}
             style={{
               color: "#ef4444",
               border: "1px solid rgba(239, 68, 68, 0.3)",
@@ -128,15 +146,18 @@ export default function TitleBar({ editorRef, onSave }: Props) {
             title="Disconnect"
           >
             <i className="fa-solid fa-plug-circle-xmark" style={{ fontSize: 9 }} />
-            Disconnect
+            {!isMobile && "Disconnect"}
           </button>
         </>
       ) : (
         <button
           onClick={handleConnect}
           disabled={busy}
-          className={`text-xs px-2 py-0.5 rounded font-medium flex items-center gap-1.5 ${busy ? "loading" : ""}`}
-          style={{ color: "white", background: "var(--accent)" }}
+          className={`text-xs px-2 py-0.5 rounded font-medium flex items-center gap-1.5 shrink-0 ${busy ? "loading" : ""}`}
+          style={{
+            color: "white",
+            background: "var(--accent)",
+          }}
           title="Connect"
         >
           <i className="fa-solid fa-plug" style={{ fontSize: 9 }} />
@@ -144,19 +165,22 @@ export default function TitleBar({ editorRef, onSave }: Props) {
         </button>
       )}
 
-      <div
-        className="w-px h-4 mx-1"
-        style={{ background: "var(--border)" }}
-      />
-
-      <button
-        onClick={toggleTheme}
-        className="titlebar-btn"
-        style={{ color: "var(--text-secondary)" }}
-        title="Toggle Theme"
-      >
-        <i className={`fa-solid ${dark ? "fa-sun" : "fa-moon"}`} style={{ fontSize: 11 }} />
-      </button>
+      {!isMobile && (
+        <>
+          <div
+            className="w-px h-4 mx-1 shrink-0"
+            style={{ background: "var(--border)" }}
+          />
+          <button
+            onClick={toggleTheme}
+            className="titlebar-btn shrink-0"
+            style={{ color: "var(--text-secondary)" }}
+            title="Toggle Theme"
+          >
+            <i className={`fa-solid ${dark ? "fa-sun" : "fa-moon"}`} style={{ fontSize: 11 }} />
+          </button>
+        </>
+      )}
     </div>
   );
 }

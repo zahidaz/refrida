@@ -1,4 +1,5 @@
 import { useLayoutStore, type Activity } from "@/stores/layout.ts";
+import { useIsMobile } from "@/hooks/useIsMobile.ts";
 
 const ACTIVITIES: Array<{ id: Activity; icon: string; label: string }> = [
   { id: "scripts", icon: "fa-code", label: "Scripts" },
@@ -7,6 +8,33 @@ const ACTIVITIES: Array<{ id: Activity; icon: string; label: string }> = [
 
 export default function ActivityBar() {
   const { activeActivity, sidePanelVisible, toggleActivity } = useLayoutStore();
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <div className="mobile-bottom-nav">
+        {ACTIVITIES.map((a) => (
+          <button
+            key={a.id}
+            onClick={() => toggleActivity(a.id)}
+            style={{
+              color:
+                activeActivity === a.id && sidePanelVisible
+                  ? "var(--accent-text)"
+                  : "var(--text-muted)",
+              background:
+                activeActivity === a.id && sidePanelVisible
+                  ? "var(--accent-soft)"
+                  : "transparent",
+            }}
+            title={a.label}
+          >
+            <i className={`fa-solid ${a.icon}`} style={{ fontSize: 16 }} />
+          </button>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div

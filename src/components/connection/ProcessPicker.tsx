@@ -7,6 +7,7 @@ import {
 import { useSessionStore } from "@/stores/session.ts";
 import { useConnectionStore } from "@/stores/connection.ts";
 import { useLayoutStore } from "@/stores/layout.ts";
+import { useIsMobile } from "@/hooks/useIsMobile.ts";
 import Modal from "@/components/ui/Modal.tsx";
 
 export default function ProcessPicker() {
@@ -17,6 +18,7 @@ export default function ProcessPicker() {
     useConnectionStore();
   const { attachToProcess, attachedPid } = useSessionStore();
   const setProcessPickerOpen = useLayoutStore((s) => s.setProcessPickerOpen);
+  const isMobile = useIsMobile();
   const [killConfirmPid, setKillConfirmPid] = useState<number | null>(null);
   const [tab, setTab] = useState<"processes" | "applications" | "spawn">(
     "processes",
@@ -59,8 +61,8 @@ export default function ProcessPicker() {
       style={{
         background: "var(--bg-primary)",
         borderColor: "var(--border)",
-        width: 560,
-        height: "70vh",
+        width: isMobile ? "100%" : "min(560px, 100vw)",
+        height: isMobile ? "100%" : "70vh",
       }}
     >
       <div
@@ -97,45 +99,48 @@ export default function ProcessPicker() {
           <i className="fa-solid fa-arrows-rotate mr-1" style={{ fontSize: 9 }} />
           Refresh
         </button>
-        <button
-          onClick={close}
-          className="text-sm px-1"
-          style={{ color: "var(--text-muted)" }}
-        >
-          <i className="fa-solid fa-xmark" />
-        </button>
+        {!isMobile && (
+          <button
+            onClick={close}
+            className="text-sm px-1"
+            style={{ color: "var(--text-muted)" }}
+          >
+            <i className="fa-solid fa-xmark" />
+          </button>
+        )}
       </div>
 
       <div
-        className="flex items-center gap-1 px-4 py-2 border-b shrink-0"
+        className={`flex ${isMobile ? "flex-col gap-2" : "items-center gap-1"} px-4 py-2 border-b shrink-0`}
         style={{ borderColor: "var(--border)" }}
       >
-        {(["processes", "applications", "spawn"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className="text-xs px-2.5 py-1 rounded"
-            style={
-              tab === t
-                ? { background: "var(--accent)", color: "white" }
-                : { color: "var(--text-secondary)" }
-            }
-          >
-            {t === "processes"
-              ? "Processes"
-              : t === "applications"
-                ? "Applications"
-                : "Spawn"}
-          </button>
-        ))}
-        <div className="flex-1" />
+        <div className="flex items-center gap-1">
+          {(["processes", "applications", "spawn"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`text-xs px-2.5 py-1 rounded ${isMobile ? "flex-1" : ""}`}
+              style={
+                tab === t
+                  ? { background: "var(--accent)", color: "white" }
+                  : { color: "var(--text-secondary)" }
+              }
+            >
+              {t === "processes"
+                ? "Processes"
+                : t === "applications"
+                  ? "Apps"
+                  : "Spawn"}
+            </button>
+          ))}
+        </div>
         {tab !== "spawn" && (
           <input
             type="text"
             value={state.filterText}
             onChange={(e) => state.setFilterText(e.target.value)}
             placeholder="Filter..."
-            className="text-xs px-2 py-1 rounded border outline-none w-44"
+            className={`text-xs px-2 py-1 rounded border outline-none ${isMobile ? "w-full" : "ml-auto w-44"}`}
             style={{
               background: "var(--bg-input)",
               borderColor: "var(--border)",

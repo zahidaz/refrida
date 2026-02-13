@@ -15,6 +15,7 @@ import TabBar from "@/components/editor/TabBar.tsx";
 import ConsolePanel from "@/components/console/ConsolePanel.tsx";
 import { useResizable, useResizablePercent } from "@/hooks/useResizable.ts";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts.ts";
+import { useIsMobile } from "@/hooks/useIsMobile.ts";
 import { importFile } from "@/lib/fileIO.ts";
 import { useScriptsStore } from "@/stores/scripts.ts";
 import { useSessionStore } from "@/stores/session.ts";
@@ -25,8 +26,10 @@ export default function App() {
   const [cursorLine, setCursorLine] = useState(1);
   const [cursorCol, setCursorCol] = useState(1);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const sidePanelVisible = useLayoutStore((s) => s.sidePanelVisible);
+  const setSidePanelVisible = useLayoutStore((s) => s.setSidePanelVisible);
   const sidePanelWidth = useLayoutStore((s) => s.sidePanelWidth);
   const setSidePanelWidth = useLayoutStore((s) => s.setSidePanelWidth);
   const bottomPanelVisible = useLayoutStore((s) => s.bottomPanelVisible);
@@ -44,6 +47,7 @@ export default function App() {
     150,
     600,
     "x",
+    isMobile,
   );
   const editorPane = useResizablePercent(
     "refrida-editor-height",
@@ -51,6 +55,7 @@ export default function App() {
     15,
     85,
     ".main-content",
+    isMobile,
   );
 
   useEffect(() => {
@@ -77,7 +82,8 @@ export default function App() {
     const getCurrentContent = () => editorRef.current?.getValue() ?? "";
     useScriptsStore.getState().openInNewTab(name, content, getCurrentContent);
     editorRef.current?.setValue(content);
-  }, [welcomeOpen, setWelcomeOpen]);
+    if (isMobile) setSidePanelVisible(false);
+  }, [welcomeOpen, setWelcomeOpen, isMobile, setSidePanelVisible]);
 
   const handleImport = useCallback(() => {
     importFile(handleEditorLoad);
@@ -120,14 +126,29 @@ export default function App() {
     }
   }
 
+  const editorHeight = isMobile
+    ? bottomPanelVisible ? "50%" : "100%"
+    : bottomPanelVisible ? `${editorPane.value}%` : "100%";
+
+  const consoleHeight = isMobile
+    ? "50%"
+    : `${100 - editorPane.value}%`;
+
+  const sidePanelContent = sidePanelVisible && (
+    <SidePanel onLoadScript={handleLibraryLoad} />
+  );
+
   return (
     <div className="flex flex-col h-full">
       <TitleBar editorRef={editorRef} onSave={handleSave} />
 
-      <div className="flex flex-1 overflow-hidden">
-        <ActivityBar />
+      <div
+        className="flex flex-1 overflow-hidden"
+        style={{ paddingBottom: isMobile ? 48 : 0 }}
+      >
+        {!isMobile && <ActivityBar />}
 
-        {sidePanelVisible && (
+        {!isMobile && sidePanelVisible && (
           <>
             <div
               style={{
@@ -136,11 +157,12 @@ export default function App() {
               }}
               className="overflow-hidden"
             >
-              <SidePanel onLoadScript={handleLibraryLoad} />
+              {sidePanelContent}
             </div>
             <div
               className="resize-handle-x"
               onMouseDown={sideResize.onMouseDown}
+              onTouchStart={sideResize.onTouchStart}
             />
           </>
         )}
@@ -148,9 +170,7 @@ export default function App() {
         <div className="flex-1 flex flex-col overflow-hidden main-content">
           <div
             className="flex flex-col overflow-hidden"
-            style={{
-              height: bottomPanelVisible ? `${editorPane.value}%` : "100%",
-            }}
+            style={{ height: editorHeight }}
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
           >
@@ -174,13 +194,16 @@ export default function App() {
 
           {bottomPanelVisible && (
             <>
-              <div
-                className="resize-handle-y"
-                onMouseDown={editorPane.onMouseDown}
-              />
+              {!isMobile && (
+                <div
+                  className="resize-handle-y"
+                  onMouseDown={editorPane.onMouseDown}
+                  onTouchStart={editorPane.onTouchStart}
+                />
+              )}
               <div
                 className="flex flex-col overflow-hidden"
-                style={{ height: `${100 - editorPane.value}%` }}
+                style={{ height: consoleHeight }}
               >
                 <ConsolePanel />
               </div>
@@ -189,7 +212,21 @@ export default function App() {
         </div>
       </div>
 
-      <StatusBar cursorLine={cursorLine} cursorCol={cursorCol} />
+      {isMobile && sidePanelVisible && (
+        <>
+          <div
+            className="side-panel-backdrop"
+            onClick={() => setSidePanelVisible(false)}
+          />
+          <div className="side-panel-overlay">
+            {sidePanelContent}
+          </div>
+        </>
+      )}
+
+      {isMobile && <ActivityBar />}
+
+      {!isMobile && <StatusBar cursorLine={cursorLine} cursorCol={cursorCol} />}
 
       {commandPaletteOpen && <CommandPalette onRun={handleRun} />}
       {connectionDialogOpen && <ConnectionDialog />}

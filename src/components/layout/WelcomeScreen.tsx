@@ -1,6 +1,7 @@
 import { useLayoutStore } from "@/stores/layout.ts";
 import { useConnectionStore } from "@/stores/connection.ts";
 import { TEMPLATES } from "@/lib/templates.ts";
+import { useIsMobile } from "@/hooks/useIsMobile.ts";
 
 interface Props {
   onLoadScript: (name: string, code: string) => void;
@@ -44,6 +45,7 @@ const SHORTCUTS = [
 export default function WelcomeScreen({ onLoadScript }: Props) {
   const setConnectionDialogOpen = useLayoutStore((s) => s.setConnectionDialogOpen);
   const connected = useConnectionStore((s) => s.connected);
+  const isMobile = useIsMobile();
 
   function loadTemplate(key: string) {
     const t = TEMPLATES[key];
@@ -54,7 +56,7 @@ export default function WelcomeScreen({ onLoadScript }: Props) {
 
   return (
     <div
-      className="h-full overflow-y-auto px-8 py-10"
+      className={`h-full overflow-y-auto py-10 ${isMobile ? "px-4" : "px-8"}`}
       style={{ background: "var(--bg-primary)" }}
     >
       <div className="max-w-2xl mx-auto">
@@ -117,7 +119,7 @@ export default function WelcomeScreen({ onLoadScript }: Props) {
           >
             Quick Start
           </h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className={`grid ${isMobile ? "grid-cols-1" : "grid-cols-2"} gap-3`}>
             {QUICK_START_STEPS.map((s) => (
               <div
                 key={s.step}
@@ -175,7 +177,7 @@ export default function WelcomeScreen({ onLoadScript }: Props) {
           >
             Templates
           </h2>
-          <div className="grid grid-cols-3 gap-2">
+          <div className={`grid ${isMobile ? "grid-cols-2" : "grid-cols-3"} gap-2`}>
             {FEATURED_TEMPLATES.map((key) => {
               const t = TEMPLATES[key];
               if (!t) return null;

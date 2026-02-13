@@ -48,7 +48,7 @@ export default function ConnectionDialog() {
   return (
     <Modal
       onClose={close}
-      className="rounded-lg border p-5 w-96"
+      className="rounded-lg border p-5 w-full max-w-96"
       style={{
         background: "var(--bg-primary)",
         borderColor: "var(--border)",

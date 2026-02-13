@@ -5,6 +5,7 @@ import { useThemeStore } from "@/stores/theme.ts";
 import { useScriptsStore } from "@/stores/scripts.ts";
 import { useSessionStore } from "@/stores/session.ts";
 import { getFridaCompletions } from "@/lib/fridaCompletions.ts";
+import { useIsMobile } from "@/hooks/useIsMobile.ts";
 
 export type MonacoEditor = editor.IStandaloneCodeEditor;
 
@@ -19,6 +20,7 @@ export default function ScriptEditor({ editorRef, onCursorChange }: Props) {
   const dark = useThemeStore((s) => s.dark);
   const updateTabContent = useScriptsStore((s) => s.updateTabContent);
   const runScript = useSessionStore((s) => s.runScript);
+  const isMobile = useIsMobile();
   const mounted = useRef(false);
 
   const handleMount: OnMount = useCallback(
@@ -88,17 +90,20 @@ export default function ScriptEditor({ editorRef, onCursorChange }: Props) {
       onMount={handleMount}
       onChange={handleChange}
       options={{
-        fontSize: 13,
+        fontSize: isMobile ? 12 : 13,
         fontFamily:
           "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
         minimap: { enabled: false },
-        lineNumbers: "on",
+        lineNumbers: isMobile ? "off" : "on",
         tabSize: 2,
         insertSpaces: true,
-        wordWrap: "off",
+        wordWrap: isMobile ? "on" : "off",
         scrollBeyondLastLine: false,
         automaticLayout: true,
         padding: { top: 8 },
+        folding: !isMobile,
+        glyphMargin: false,
+        lineDecorationsWidth: isMobile ? 4 : undefined,
       }}
     />
   );

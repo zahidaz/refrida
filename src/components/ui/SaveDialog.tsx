@@ -25,7 +25,7 @@ export default function SaveDialog({ onSave, onClose, defaultName = "" }: Props)
   return (
     <Modal onClose={onClose}>
       <div
-        className="rounded-lg border p-4 w-80"
+        className="rounded-lg border p-4 w-full max-w-80"
         style={{
           background: "var(--bg-primary)",
           borderColor: "var(--border)",

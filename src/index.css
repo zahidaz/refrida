@@ -361,3 +361,86 @@ body,
   color: var(--text-muted);
   font-family: ui-monospace, monospace;
 }
+
+@media (max-width: 639px) {
+  .resize-handle-x,
+  .resize-handle-y {
+    display: none;
+  }
+
+  .titlebar-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .tab-item {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .tab-close {
+    opacity: 0.7;
+    font-size: 16px;
+    padding: 0 4px;
+    min-width: 28px;
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .console-filter-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    min-height: 32px;
+  }
+
+  .menu-dropdown {
+    min-width: 0;
+    max-width: 90vw;
+  }
+
+  .side-panel-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 85vw;
+    max-width: 320px;
+    z-index: 30;
+  }
+
+  .side-panel-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 29;
+  }
+
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 48px;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-secondary);
+  }
+
+  .mobile-bottom-nav button {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+  }
+}

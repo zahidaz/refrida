@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useScriptsStore } from "@/stores/scripts.ts";
 import { useSessionStore } from "@/stores/session.ts";
 import { useLayoutStore } from "@/stores/layout.ts";
+import { useIsMobile } from "@/hooks/useIsMobile.ts";
 import type { MonacoEditor } from "./ScriptEditor.tsx";
 
 interface Props {
@@ -14,6 +15,7 @@ export default function TabBar({ editorRef, onRun }: Props) {
     useScriptsStore();
   const { sessionActive, scriptActive, busy, busyLabel, unloadScript, cancelBusy } = useSessionStore();
   const { welcomeOpen, setWelcomeOpen } = useLayoutStore();
+  const isMobile = useIsMobile();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [dragId, setDragId] = useState<string | null>(null);
@@ -119,7 +121,7 @@ export default function TabBar({ editorRef, onRun }: Props) {
             }}
             onClick={() => handleSwitch(tab.id)}
             onDoubleClick={(e) => startRename(e, tab.id)}
-            draggable={editingId !== tab.id}
+            draggable={!isMobile && editingId !== tab.id}
             onDragStart={(e) => handleDragStart(e, tab.id)}
             onDragOver={(e) => handleDragOver(e, tab.id)}
             onDrop={(e) => handleDrop(e, tab.id)}
