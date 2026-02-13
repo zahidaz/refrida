@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>reFrida</title>
     <script>
-      if (localStorage.getItem("refrida-theme") === "dark" ||
-        (!localStorage.getItem("refrida-theme") && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+      if (localStorage.getItem("refrida-theme") === "dark") {
         document.documentElement.classList.add("dark");
       }
     </script>

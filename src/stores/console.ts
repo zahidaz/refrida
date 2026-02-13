@@ -140,13 +140,13 @@ export function getRunIds(state: ConsoleState): number[] {
   return Array.from(ids).sort((a, b) => b - a);
 }
 
-export function consoleLineClass(level: LogLevel): string {
+export function consoleLineColor(level: LogLevel): string {
   const map: Record<string, string> = {
-    warning: "text-amber-600 dark:text-amber-400",
-    error: "text-red-600 dark:text-red-400",
-    system: "text-orange-600 dark:text-orange-400",
+    warning: "var(--accent-text)",
+    error: "#ef4444",
+    system: "var(--text-muted)",
   };
-  return map[level] || "text-gray-800 dark:text-gray-200";
+  return map[level] || "var(--text-primary)";
 }
 
 export function isJson(text: string): boolean {

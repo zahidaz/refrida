@@ -24,6 +24,13 @@
   --accent-hover: #c2410c;
   --accent-soft: rgba(234, 88, 12, 0.1);
   --accent-text: #ea580c;
+  --json-string: #0a7e07;
+  --json-number: #0550ae;
+  --json-bool: #8250df;
+  --json-null: #8b8b8b;
+  --json-key: #953800;
+  --json-collapse: #8b8b8b;
+  --console-ok: #16a34a;
 }
 
 .dark {
@@ -48,6 +55,13 @@
   --accent-hover: #fb923c;
   --accent-soft: rgba(249, 115, 22, 0.12);
   --accent-text: #fb923c;
+  --json-string: #7ee787;
+  --json-number: #79c0ff;
+  --json-bool: #d2a8ff;
+  --json-null: #6e7681;
+  --json-key: #ffa657;
+  --json-collapse: #6e7681;
+  --console-ok: #3fb950;
 }
 
 html,

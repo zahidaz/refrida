@@ -109,8 +109,11 @@ export const useProcessesStore = create<ProcessesState>((set, get) => ({
           return;
         }
         try {
-          const processes = await client.enumerateProcesses();
-          set({ processes });
+          const [processes, apps] = await Promise.all([
+            client.enumerateProcesses(),
+            client.enumerateApplications(),
+          ]);
+          set({ processes, applications: apps });
         } catch {}
       }, 3000);
     }

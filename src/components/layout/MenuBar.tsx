@@ -19,13 +19,14 @@ interface MenuItem {
 
 interface Props {
   editorRef: React.RefObject<MonacoEditor | null>;
+  onSave: () => void;
 }
 
-export default function MenuBar({ editorRef }: Props) {
+export default function MenuBar({ editorRef, onSave }: Props) {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const barRef = useRef<HTMLDivElement>(null);
 
-  const { syncCurrentTab, saveToLibrary, addTab, getActiveTab } =
+  const { syncCurrentTab, addTab, getActiveTab } =
     useScriptsStore();
   const {
     sessionActive,
@@ -36,7 +37,7 @@ export default function MenuBar({ editorRef }: Props) {
     setScriptRuntime,
   } = useSessionStore();
   const { toggle: toggleTheme } = useThemeStore();
-  const { toggleSidePanel, toggleBottomPanel, setCommandPaletteOpen, setAboutOpen } =
+  const { toggleSidePanel, toggleBottomPanel, setCommandPaletteOpen, setAboutOpen, setWelcomeOpen } =
     useLayoutStore();
 
   useEffect(() => {
@@ -75,7 +76,7 @@ export default function MenuBar({ editorRef }: Props) {
 
   function handleSaveToLibrary() {
     close();
-    saveToLibrary(editorRef.current?.getValue() ?? "");
+    onSave();
   }
 
   const templateItems: MenuItem[] = Object.entries(TEMPLATES).map(
@@ -196,6 +197,14 @@ export default function MenuBar({ editorRef }: Props) {
       },
     ],
     Help: [
+      {
+        label: "Welcome",
+        action: () => {
+          close();
+          setWelcomeOpen(true);
+        },
+      },
+      { label: "", separator: true },
       {
         label: "About reFrida",
         action: () => {

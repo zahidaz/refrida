@@ -8,7 +8,6 @@ interface LayoutState {
   sidePanelVisible: boolean;
   sidePanelWidth: number;
   bottomPanelVisible: boolean;
-  bottomPanelHeight: number;
   commandPaletteOpen: boolean;
   connectionDialogOpen: boolean;
   processPickerOpen: boolean;
@@ -19,7 +18,6 @@ interface LayoutState {
   setSidePanelVisible: (v: boolean) => void;
   setSidePanelWidth: (w: number) => void;
   setBottomPanelVisible: (v: boolean) => void;
-  setBottomPanelHeight: (h: number) => void;
   toggleSidePanel: () => void;
   toggleBottomPanel: () => void;
   setCommandPaletteOpen: (v: boolean) => void;
@@ -34,7 +32,6 @@ export const useLayoutStore = create<LayoutState>((set, get) => ({
   sidePanelVisible: getItem("refrida-side-panel-visible", false),
   sidePanelWidth: getItem("refrida-side-panel-width", 300),
   bottomPanelVisible: getItem("refrida-bottom-panel-visible", true),
-  bottomPanelHeight: getItem("refrida-bottom-panel-height", 45),
   commandPaletteOpen: false,
   connectionDialogOpen: false,
   processPickerOpen: false,
@@ -67,11 +64,6 @@ export const useLayoutStore = create<LayoutState>((set, get) => ({
   setBottomPanelVisible: (bottomPanelVisible) => {
     set({ bottomPanelVisible });
     setItem("refrida-bottom-panel-visible", bottomPanelVisible);
-  },
-
-  setBottomPanelHeight: (bottomPanelHeight) => {
-    set({ bottomPanelHeight });
-    setItem("refrida-bottom-panel-height", bottomPanelHeight);
   },
 
   toggleSidePanel: () => {

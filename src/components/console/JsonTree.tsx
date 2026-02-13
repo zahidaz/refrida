@@ -14,30 +14,28 @@ function JsonTreeNode({
   const [collapsed, setCollapsed] = useState(depth > 0);
 
   if (depth > MAX_DEPTH) {
-    return <span className="text-gray-500">...</span>;
+    return <span style={{ color: "var(--json-null)" }}>...</span>;
   }
 
   const isObject = value !== null && typeof value === "object";
 
   if (!isObject) {
-    const valClass =
+    const color =
       typeof value === "string"
-        ? "text-green-400"
+        ? "var(--json-string)"
         : typeof value === "number"
-          ? "text-blue-400"
+          ? "var(--json-number)"
           : typeof value === "boolean"
-            ? "text-purple-400"
-            : value === null
-              ? "text-gray-500"
-              : "text-gray-200";
+            ? "var(--json-bool)"
+            : "var(--json-null)";
     const display =
       typeof value === "string" ? `"${value}"` : String(value);
     return (
       <span className="json-leaf">
         {label && (
-          <span className="text-orange-300 mr-1">{label}: </span>
+          <span style={{ color: "var(--json-key)" }} className="mr-1">{label}: </span>
         )}
-        <span className={valClass}>{display}</span>
+        <span style={{ color }}>{display}</span>
       </span>
     );
   }
@@ -54,16 +52,19 @@ function JsonTreeNode({
       style={{ paddingLeft: depth > 0 ? "14px" : "0" }}
     >
       <span
-        className="json-toggle cursor-pointer select-none hover:text-white"
+        className="json-toggle cursor-pointer select-none"
         onClick={() => setCollapsed(!collapsed)}
       >
-        <span className="inline-block w-3 text-gray-500 text-[10px] mr-0.5">
+        <span
+          className="inline-block w-3 text-[10px] mr-0.5"
+          style={{ color: "var(--json-collapse)" }}
+        >
           {collapsed ? "\u25B6" : "\u25BC"}
         </span>
         {label && (
-          <span className="text-orange-300 mr-1">{label}: </span>
+          <span style={{ color: "var(--json-key)" }} className="mr-1">{label}: </span>
         )}
-        {collapsed && <span className="text-gray-500">{preview}</span>}
+        {collapsed && <span style={{ color: "var(--json-collapse)" }}>{preview}</span>}
       </span>
       {!collapsed && (
         <div className="json-children">

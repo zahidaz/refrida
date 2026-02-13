@@ -7,6 +7,7 @@ import {
 } from "@/lib/frida.ts";
 import { getItem, setItem } from "@/lib/storage.ts";
 import { useConsoleStore } from "./console.ts";
+import { addToHistory } from "@/components/sidebar/SettingsPanel.tsx";
 
 interface ConnectionSettings {
   serverUrl: string;
@@ -132,6 +133,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
 
         const processes = await client.enumerateProcesses();
         set({ connected: true });
+        addToHistory(host, tls);
         append(
           `Connected. ${processes.length} processes found.`,
           "system",

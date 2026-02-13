@@ -1,5 +1,7 @@
+import { useState, useRef, useEffect } from "react";
 import { useScriptsStore } from "@/stores/scripts.ts";
 import { useSessionStore } from "@/stores/session.ts";
+import { useLayoutStore } from "@/stores/layout.ts";
 import type { MonacoEditor } from "./ScriptEditor.tsx";
 
 interface Props {
@@ -11,12 +13,24 @@ export default function TabBar({ editorRef, onRun }: Props) {
   const { tabs, activeTabId, switchTab, addTab, closeTab, renameTab } =
     useScriptsStore();
   const { sessionActive, scriptActive, unloadScript } = useSessionStore();
+  const { welcomeOpen, setWelcomeOpen } = useLayoutStore();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editingId && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editingId]);
 
   function getCurrentContent(): string {
     return editorRef.current?.getValue() ?? "";
   }
 
   function handleSwitch(id: string) {
+    if (welcomeOpen) setWelcomeOpen(false);
     if (scriptActive) {
       unloadScript();
     }
@@ -28,6 +42,7 @@ export default function TabBar({ editorRef, onRun }: Props) {
   }
 
   function handleAdd() {
+    if (welcomeOpen) setWelcomeOpen(false);
     addTab(getCurrentContent);
     if (editorRef.current) {
       editorRef.current.setValue("");
@@ -42,12 +57,24 @@ export default function TabBar({ editorRef, onRun }: Props) {
     }
   }
 
-  function handleRename(e: React.MouseEvent, id: string) {
+  function startRename(e: React.MouseEvent, id: string) {
     e.stopPropagation();
     const tab = tabs.find((t) => t.id === id);
     if (!tab) return;
-    const name = prompt("Tab name:", tab.name);
-    if (name) renameTab(id, name);
+    setEditingId(id);
+    setEditValue(tab.name);
+  }
+
+  function commitRename() {
+    if (editingId && editValue.trim()) {
+      renameTab(editingId, editValue.trim());
+    }
+    setEditingId(null);
+  }
+
+  function handleRenameKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter") commitRename();
+    if (e.key === "Escape") setEditingId(null);
   }
 
   return (
@@ -61,9 +88,25 @@ export default function TabBar({ editorRef, onRun }: Props) {
             key={tab.id}
             className={`tab-item ${tab.id === activeTabId ? "active" : ""}`}
             onClick={() => handleSwitch(tab.id)}
-            onDoubleClick={(e) => handleRename(e, tab.id)}
+            onDoubleClick={(e) => startRename(e, tab.id)}
           >
-            <span>{tab.name}</span>
+            {editingId === tab.id ? (
+              <input
+                ref={inputRef}
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onBlur={commitRename}
+                onKeyDown={handleRenameKeyDown}
+                className="text-xs bg-transparent outline-none border-b w-20"
+                style={{
+                  color: "var(--text-primary)",
+                  borderColor: "var(--accent)",
+                }}
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <span>{tab.name}</span>
+            )}
             {tabs.length > 1 && (
               <span
                 className="tab-close"
@@ -88,7 +131,7 @@ export default function TabBar({ editorRef, onRun }: Props) {
           onClick={onRun}
           disabled={!sessionActive}
           className="titlebar-btn disabled:opacity-30"
-          style={{ color: scriptActive ? "#d97706" : "#22c55e" }}
+          style={{ color: scriptActive ? "var(--accent)" : "var(--console-ok)" }}
           title={scriptActive ? "Re-run (Ctrl+Enter)" : "Run (Ctrl+Enter)"}
         >
           <i

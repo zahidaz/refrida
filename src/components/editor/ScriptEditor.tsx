@@ -1,11 +1,14 @@
 import { useRef, useCallback } from "react";
 import Editor, { type OnMount, type OnChange } from "@monaco-editor/react";
-import type { editor } from "monaco-editor";
+import type { editor, languages } from "monaco-editor";
 import { useThemeStore } from "@/stores/theme.ts";
 import { useScriptsStore } from "@/stores/scripts.ts";
 import { useSessionStore } from "@/stores/session.ts";
+import { getFridaCompletions } from "@/lib/fridaCompletions.ts";
 
 export type MonacoEditor = editor.IStandaloneCodeEditor;
+
+let completionsRegistered = false;
 
 interface Props {
   editorRef: React.MutableRefObject<MonacoEditor | null>;
@@ -19,7 +22,7 @@ export default function ScriptEditor({ editorRef, onCursorChange }: Props) {
   const mounted = useRef(false);
 
   const handleMount: OnMount = useCallback(
-    (editor) => {
+    (editor, monaco) => {
       editorRef.current = editor;
       mounted.current = true;
 
@@ -32,14 +35,34 @@ export default function ScriptEditor({ editorRef, onCursorChange }: Props) {
         label: "Run Script",
         keybindings: [
           // eslint-disable-next-line no-bitwise
-          (window.monaco?.KeyMod.CtrlCmd ?? 2048) |
-            (window.monaco?.KeyCode.Enter ?? 3),
+          monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
         ],
         run: () => {
           const source = editor.getValue();
           runScript(source);
         },
       });
+
+      if (!completionsRegistered) {
+        completionsRegistered = true;
+        const completions = getFridaCompletions();
+        monaco.languages.registerCompletionItemProvider("javascript", {
+          provideCompletionItems: (_model: unknown, position: { lineNumber: number; column: number }) => {
+            const range = {
+              startLineNumber: position.lineNumber,
+              endLineNumber: position.lineNumber,
+              startColumn: position.column,
+              endColumn: position.column,
+            };
+            return {
+              suggestions: completions.map((c) => ({
+                ...c,
+                range,
+              })) as languages.CompletionItem[],
+            };
+          },
+        });
+      }
 
       const tab = useScriptsStore.getState().getActiveTab();
       if (tab?.content) {
@@ -79,13 +102,4 @@ export default function ScriptEditor({ editorRef, onCursorChange }: Props) {
       }}
     />
   );
-}
-
-declare global {
-  interface Window {
-    monaco?: {
-      KeyMod: { CtrlCmd: number };
-      KeyCode: { Enter: number };
-    };
-  }
 }

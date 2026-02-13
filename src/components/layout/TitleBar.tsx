@@ -10,9 +10,10 @@ import type { MonacoEditor } from "@/components/editor/ScriptEditor.tsx";
 
 interface Props {
   editorRef: React.RefObject<MonacoEditor | null>;
+  onSave: () => void;
 }
 
-export default function TitleBar({ editorRef }: Props) {
+export default function TitleBar({ editorRef, onSave }: Props) {
   const {
     connected,
     deviceInfo,
@@ -56,7 +57,7 @@ export default function TitleBar({ editorRef }: Props) {
         <span style={{ color: "var(--text-primary)" }}>Frida</span>
       </span>
 
-      <MenuBar editorRef={editorRef} />
+      <MenuBar editorRef={editorRef} onSave={onSave} />
 
       <div className="flex-1" />
 

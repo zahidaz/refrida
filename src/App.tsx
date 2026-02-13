@@ -8,6 +8,7 @@ import ConnectionDialog from "@/components/connection/ConnectionDialog.tsx";
 import ProcessPicker from "@/components/connection/ProcessPicker.tsx";
 import AboutDialog from "@/components/layout/AboutDialog.tsx";
 import WelcomeScreen from "@/components/layout/WelcomeScreen.tsx";
+import SaveDialog from "@/components/ui/SaveDialog.tsx";
 import ScriptEditor from "@/components/editor/ScriptEditor.tsx";
 import type { MonacoEditor } from "@/components/editor/ScriptEditor.tsx";
 import TabBar from "@/components/editor/TabBar.tsx";
@@ -23,6 +24,7 @@ export default function App() {
   const editorRef = useRef<MonacoEditor | null>(null);
   const [cursorLine, setCursorLine] = useState(1);
   const [cursorCol, setCursorCol] = useState(1);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
 
   const sidePanelVisible = useLayoutStore((s) => s.sidePanelVisible);
   const sidePanelWidth = useLayoutStore((s) => s.sidePanelWidth);
@@ -75,9 +77,7 @@ export default function App() {
   }, [handleEditorLoad]);
 
   const handleSave = useCallback(() => {
-    useScriptsStore
-      .getState()
-      .saveToLibrary(editorRef.current?.getValue() ?? "");
+    setSaveDialogOpen(true);
   }, []);
 
   const shortcutHandlers = useMemo(
@@ -115,7 +115,7 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-full">
-      <TitleBar editorRef={editorRef} />
+      <TitleBar editorRef={editorRef} onSave={handleSave} />
 
       <div className="flex flex-1 overflow-hidden">
         <ActivityBar />
@@ -188,6 +188,19 @@ export default function App() {
       {connectionDialogOpen && <ConnectionDialog />}
       {processPickerOpen && <ProcessPicker />}
       {aboutOpen && <AboutDialog />}
+      {saveDialogOpen && (
+        <SaveDialog
+          defaultName={useScriptsStore.getState().getActiveTab()?.name ?? ""}
+          onSave={(name) => {
+            useScriptsStore.getState().saveToLibrary(
+              editorRef.current?.getValue() ?? "",
+              name,
+            );
+            setSaveDialogOpen(false);
+          }}
+          onClose={() => setSaveDialogOpen(false)}
+        />
+      )}
     </div>
   );
 }

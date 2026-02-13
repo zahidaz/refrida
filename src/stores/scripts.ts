@@ -42,7 +42,7 @@ interface ScriptsState {
   addTab: (getCurrentContent: () => string) => void;
   closeTab: (id: string) => string | null;
   renameTab: (id: string, newName: string) => void;
-  saveToLibrary: (content: string) => void;
+  saveToLibrary: (content: string, name: string) => void;
   loadFromLibrary: (id: string) => string | null;
   deleteFromLibrary: (id: string) => void;
   updateTabContent: (content: string) => void;
@@ -141,10 +141,8 @@ export const useScriptsStore = create<ScriptsState>((set, get) => ({
     });
   },
 
-  saveToLibrary: (content) => {
-    if (!content.trim()) return;
-    const name = prompt("Save script as:");
-    if (!name?.trim()) return;
+  saveToLibrary: (content, name) => {
+    if (!content.trim() || !name?.trim()) return;
     set((state) => {
       const savedScripts = [
         ...state.savedScripts,

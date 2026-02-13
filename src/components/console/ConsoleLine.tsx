@@ -1,4 +1,4 @@
-import { type ConsoleLine as ConsoleLineType, consoleLineClass, isJson } from "@/stores/console.ts";
+import { type ConsoleLine as ConsoleLineType, consoleLineColor, isJson } from "@/stores/console.ts";
 import { useConsoleStore } from "@/stores/console.ts";
 import JsonTree from "./JsonTree.tsx";
 
@@ -14,9 +14,8 @@ export default function ConsoleLine({ line, index }: Props) {
 
   return (
     <div
-      className="flex items-start px-2 py-0.5 text-xs font-mono cursor-pointer group hover-row"
+      className="flex items-start px-2 py-0.5 text-xs font-mono group hover-row"
       style={{ color: "var(--text-primary)" }}
-      onClick={() => copyLine(line, index)}
     >
       <span
         className="flex-shrink-0 select-none mr-2"
@@ -24,14 +23,21 @@ export default function ConsoleLine({ line, index }: Props) {
       >
         {line.timestamp}
       </span>
-      <div className={`flex-1 min-w-0 break-all ${consoleLineClass(line.level)}`}>
+      <div className="flex-1 min-w-0 break-all select-text" style={{ color: consoleLineColor(line.level) }}>
         {jsonData ? <JsonTree data={jsonData} /> : line.text}
       </div>
-      {copiedIndex === index && (
-        <span className="text-[10px] text-green-500 ml-1 select-none">
-          Copied!
-        </span>
-      )}
+      <button
+        className="flex-shrink-0 text-[10px] px-1 ml-1 rounded opacity-0 group-hover:opacity-60 hover:!opacity-100 select-none"
+        style={{ color: "var(--text-muted)" }}
+        onClick={() => copyLine(line, index)}
+        title="Copy line"
+      >
+        {copiedIndex === index ? (
+          <i className="fa-solid fa-check" style={{ color: "var(--console-ok)" }} />
+        ) : (
+          <i className="fa-regular fa-copy" />
+        )}
+      </button>
     </div>
   );
 }
