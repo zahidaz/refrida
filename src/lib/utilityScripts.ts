@@ -564,49 +564,109 @@ export function enumerateEnvVarsScript(): string {
   return `
 try {
   var platform = Process.platform;
-  if (platform === "linux") {
-    var openFn = new NativeFunction(Module.findExportByName(null, "fopen"), "pointer", ["pointer", "pointer"]);
-    var readFn = new NativeFunction(Module.findExportByName(null, "fread"), "int", ["pointer", "int", "int", "pointer"]);
-    var closeFn = new NativeFunction(Module.findExportByName(null, "fclose"), "int", ["pointer"]);
-    var pathBuf = Memory.allocUtf8String("/proc/self/environ");
-    var modeBuf = Memory.allocUtf8String("r");
-    var fp = openFn(pathBuf, modeBuf);
-    if (!fp.isNull()) {
-      var buf = Memory.alloc(65536);
-      var n = readFn(buf, 1, 65536, fp);
-      closeFn(fp);
-      if (n > 0) {
-        var raw = buf.readByteArray(n);
-        var bytes = new Uint8Array(raw);
-        var str = "";
-        for (var i = 0; i < bytes.length; i++) str += String.fromCharCode(bytes[i]);
-        var pairs = str.split("\\0");
-        for (var j = 0; j < pairs.length; j++) {
-          var eq = pairs[j].indexOf("=");
-          if (eq > 0) {
-            send({ key: pairs[j].substring(0, eq), value: pairs[j].substring(eq + 1) });
-          }
+  var found = false;
+
+  function sendPair(s) {
+    var eq = s.indexOf("=");
+    if (eq > 0) {
+      send({ key: s.substring(0, eq), value: s.substring(eq + 1) });
+    }
+  }
+
+  function readEnvironPointer(envp) {
+    if (!envp || envp.isNull()) return false;
+    var idx = 0;
+    while (idx < 10000) {
+      var entry = envp.add(idx * Process.pointerSize).readPointer();
+      if (entry.isNull()) break;
+      try {
+        var s = entry.readUtf8String();
+        if (s) sendPair(s);
+      } catch(e2) {}
+      idx++;
+    }
+    return idx > 0;
+  }
+
+  if (platform === "windows") {
+    var getEnvW = Module.findExportByName("kernel32.dll", "GetEnvironmentStringsW");
+    var freeEnvW = Module.findExportByName("kernel32.dll", "FreeEnvironmentStringsW");
+    if (getEnvW && freeEnvW) {
+      var GetEnvironmentStringsW = new NativeFunction(getEnvW, "pointer", []);
+      var FreeEnvironmentStringsW = new NativeFunction(freeEnvW, "int", ["pointer"]);
+      var block = GetEnvironmentStringsW();
+      if (!block.isNull()) {
+        var offset = 0;
+        while (true) {
+          var s = block.add(offset).readUtf16String();
+          if (!s || s.length === 0) break;
+          sendPair(s);
+          offset += (s.length + 1) * 2;
+        }
+        FreeEnvironmentStringsW(block);
+        found = true;
+      }
+    }
+  }
+
+  if (!found && platform === "darwin") {
+    try {
+      if (typeof ObjC !== "undefined" && ObjC.available) {
+        var env = ObjC.classes.NSProcessInfo.processInfo().environment();
+        var keys = env.allKeys();
+        var count = keys.count().valueOf();
+        for (var ki = 0; ki < count; ki++) {
+          var k = keys.objectAtIndex_(ki).toString();
+          var v = env.objectForKey_(keys.objectAtIndex_(ki)).toString();
+          send({ key: k, value: v });
+        }
+        found = true;
+      }
+    } catch(e4) {}
+    if (!found) {
+      var nsGetEnviron = Module.findExportByName(null, "_NSGetEnviron");
+      if (nsGetEnviron) {
+        var getEnvironFn = new NativeFunction(nsGetEnviron, "pointer", []);
+        var envpPtr = getEnvironFn();
+        if (!envpPtr.isNull()) {
+          found = readEnvironPointer(envpPtr.readPointer());
         }
       }
     }
-  } else {
-    var environ = Module.findExportByName(null, "environ");
-    if (environ) {
-      var envp = environ.readPointer();
-      var idx = 0;
-      while (true) {
-        var entry = envp.add(idx * Process.pointerSize).readPointer();
-        if (entry.isNull()) break;
-        var s = entry.readUtf8String();
-        if (s) {
-          var eq = s.indexOf("=");
-          if (eq > 0) {
-            send({ key: s.substring(0, eq), value: s.substring(eq + 1) });
+  }
+
+  if (!found) {
+    var procEnv = null;
+    try {
+      var openFn = new NativeFunction(Module.findExportByName(null, "fopen"), "pointer", ["pointer", "pointer"]);
+      var readFn = new NativeFunction(Module.findExportByName(null, "fread"), "int", ["pointer", "int", "int", "pointer"]);
+      var closeFn = new NativeFunction(Module.findExportByName(null, "fclose"), "int", ["pointer"]);
+      var pathBuf = Memory.allocUtf8String("/proc/self/environ");
+      var modeBuf = Memory.allocUtf8String("r");
+      var fp = openFn(pathBuf, modeBuf);
+      if (!fp.isNull()) {
+        var buf = Memory.alloc(65536);
+        var n = readFn(buf, 1, 65536, fp);
+        closeFn(fp);
+        if (n > 0) {
+          var raw = buf.readByteArray(n);
+          var bytes = new Uint8Array(raw);
+          var str = "";
+          for (var i = 0; i < bytes.length; i++) str += String.fromCharCode(bytes[i]);
+          var pairs = str.split("\\0");
+          for (var j = 0; j < pairs.length; j++) {
+            if (pairs[j].length > 0) sendPair(pairs[j]);
           }
+          found = true;
         }
-        idx++;
-        if (idx > 10000) break;
       }
+    } catch(e3) {}
+  }
+
+  if (!found) {
+    var environSym = Module.findExportByName(null, "environ");
+    if (environSym) {
+      readEnvironPointer(environSym.readPointer());
     }
   }
 } catch(e) {
