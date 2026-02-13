@@ -88,6 +88,14 @@ export default function CommandPalette({ onRun }: Props) {
           useScriptsStore.getState().addTab(() => "");
         },
       },
+      {
+        id: "browse-templates",
+        label: "Browse Script Templates",
+        action: () => {
+          close();
+          useLayoutStore.getState().setTemplateBrowserOpen(true);
+        },
+      },
     ];
 
     if (sessionActive) {

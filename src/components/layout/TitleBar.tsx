@@ -37,7 +37,7 @@ export default function TitleBar({ editorRef, onSave }: Props) {
 
   return (
     <div
-      className="flex items-center gap-1 px-2 py-0.5 border-b overflow-hidden"
+      className="flex items-center gap-1 px-2 py-0.5 border-b overflow-visible relative z-50"
       style={{
         background: "var(--bg-secondary)",
         borderColor: "var(--border)",

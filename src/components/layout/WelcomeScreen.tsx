@@ -31,7 +31,7 @@ const QUICK_START_STEPS = [
   },
 ];
 
-const FEATURED_TEMPLATES = ["hello", "modules", "hook-func", "intercept", "stalker", "rpc"];
+const FEATURED_TEMPLATES = ["hello", "hook-native", "stalker", "crypto-trace", "network-trace", "anti-debug"];
 
 const SHORTCUTS = [
   { keys: "Ctrl+Enter", action: "Run script" },

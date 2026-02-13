@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { runUtilityScript } from "@/lib/utilityRunner.ts";
-import { searchMemoryScript } from "@/lib/utilityScripts.ts";
+import { searchMemoryScript, apiResolverScript } from "@/lib/utilityScripts.ts";
 
 export interface SearchMatch {
   address: string;
@@ -9,44 +9,67 @@ export interface SearchMatch {
   module: string | null;
 }
 
+export interface ApiMatch {
+  name: string;
+  address: string;
+  module: string | null;
+}
+
+export type SearchMode = "string" | "hex" | "api";
+
 interface SearchState {
   query: string;
-  searchType: "string" | "hex";
+  searchMode: SearchMode;
   results: SearchMatch[];
+  apiResults: ApiMatch[];
   loading: boolean;
   error: string | null;
   searched: boolean;
   setQuery: (q: string) => void;
-  setSearchType: (t: "string" | "hex") => void;
+  setSearchMode: (m: SearchMode) => void;
   search: () => Promise<void>;
   reset: () => void;
 }
 
 export const useSearchStore = create<SearchState>((set, get) => ({
   query: "",
-  searchType: "string",
+  searchMode: "string",
   results: [],
+  apiResults: [],
   loading: false,
   error: null,
   searched: false,
 
   setQuery: (query) => set({ query }),
-  setSearchType: (searchType) => set({ searchType }),
+  setSearchMode: (searchMode) => set({ searchMode }),
 
   search: async () => {
-    const { query, searchType } = get();
+    const { query, searchMode } = get();
     if (!query.trim()) return;
-    set({ loading: true, error: null, results: [], searched: true });
-    const isHex = searchType === "hex";
-    const result = await runUtilityScript<SearchMatch>(
-      searchMemoryScript(query, isHex),
-    );
-    if (result.error) {
-      set({ loading: false, error: result.error });
+    set({ loading: true, error: null, results: [], apiResults: [], searched: true });
+
+    if (searchMode === "api") {
+      const result = await runUtilityScript<ApiMatch | { truncated: boolean; total: number }>(
+        apiResolverScript(query),
+      );
+      if (result.error) {
+        set({ loading: false, error: result.error });
+      } else {
+        const matches = result.data.filter((d): d is ApiMatch => "name" in d);
+        set({ loading: false, apiResults: matches });
+      }
     } else {
-      set({ loading: false, results: result.data });
+      const isHex = searchMode === "hex";
+      const result = await runUtilityScript<SearchMatch>(
+        searchMemoryScript(query, isHex),
+      );
+      if (result.error) {
+        set({ loading: false, error: result.error });
+      } else {
+        set({ loading: false, results: result.data });
+      }
     }
   },
 
-  reset: () => set({ query: "", results: [], loading: false, error: null, searched: false }),
+  reset: () => set({ query: "", results: [], apiResults: [], loading: false, error: null, searched: false }),
 }));

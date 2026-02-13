@@ -3,6 +3,7 @@ import { useScriptsStore } from "@/stores/scripts.ts";
 import { useSessionStore } from "@/stores/session.ts";
 import { useLayoutStore } from "@/stores/layout.ts";
 import { useMemoryStore } from "@/stores/memory.ts";
+import { useDisasmStore } from "@/stores/disasm.ts";
 import { useIsMobile } from "@/hooks/useIsMobile.ts";
 import type { MonacoEditor } from "./ScriptEditor.tsx";
 
@@ -24,7 +25,7 @@ export default function TabBar({ editorRef, onRun }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const activeTab = tabs.find((t) => t.id === activeTabId);
-  const isCodeTab = activeTab?.type !== "hex";
+  const isCodeTab = activeTab?.type === "code" || !activeTab?.type;
 
   useEffect(() => {
     if (editingId && inputRef.current) {
@@ -41,10 +42,10 @@ export default function TabBar({ editorRef, onRun }: Props) {
     if (welcomeOpen) setWelcomeOpen(false);
     const targetTab = tabs.find((t) => t.id === id);
     const currentTab = tabs.find((t) => t.id === activeTabId);
-    const getContent = currentTab?.type === "hex" ? () => currentTab.content : getCurrentContent;
+    const getContent = currentTab?.type === "code" || !currentTab?.type ? getCurrentContent : () => currentTab.content;
     switchTab(id, getContent);
-    if (targetTab?.type !== "hex" && editorRef.current) {
-      editorRef.current.setValue(targetTab?.content ?? "");
+    if (targetTab?.type === "code" || !targetTab?.type) {
+      editorRef.current?.setValue(targetTab?.content ?? "");
     }
   }
 
@@ -61,6 +62,8 @@ export default function TabBar({ editorRef, onRun }: Props) {
     const closingTab = tabs.find((t) => t.id === id);
     if (closingTab?.type === "hex") {
       useMemoryStore.getState().removeTab(id);
+    } else if (closingTab?.type === "asm") {
+      useDisasmStore.getState().removeTab(id);
     }
     const content = closeTab(id);
     if (content !== null && editorRef.current) {
@@ -144,6 +147,12 @@ export default function TabBar({ editorRef, onRun }: Props) {
             {tab.type === "hex" && (
               <i
                 className="fa-solid fa-memory"
+                style={{ fontSize: 9, color: "var(--text-muted)", marginRight: 4 }}
+              />
+            )}
+            {tab.type === "asm" && (
+              <i
+                className="fa-solid fa-microchip"
                 style={{ fontSize: 9, color: "var(--text-muted)", marginRight: 4 }}
               />
             )}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSessionStore } from "@/stores/session.ts";
-import { navigateToMemory } from "@/lib/navigation.ts";
+import { navigateToMemory, navigateToDisasm } from "@/lib/navigation.ts";
 
 export default function MemoryViewer() {
   const sessionActive = useSessionStore((s) => s.sessionActive);
@@ -51,14 +51,22 @@ export default function MemoryViewer() {
           }}
         />
         <button
-          onClick={() => {
-            if (address.trim()) navigateToMemory(address.trim());
-          }}
+          onClick={() => { if (address.trim()) navigateToMemory(address.trim()); }}
           disabled={!address.trim()}
           className="text-[10px] px-2 py-1 rounded font-medium text-white disabled:opacity-40"
           style={{ background: "var(--accent)" }}
+          title="Open in Hex Viewer"
         >
-          Open
+          Hex
+        </button>
+        <button
+          onClick={() => { if (address.trim()) navigateToDisasm(address.trim()); }}
+          disabled={!address.trim()}
+          className="text-[10px] px-2 py-1 rounded font-medium disabled:opacity-40"
+          style={{ color: "var(--accent-text)", border: "1px solid var(--accent)" }}
+          title="Open in Disassembler"
+        >
+          ASM
         </button>
       </div>
 
@@ -72,10 +80,10 @@ export default function MemoryViewer() {
             style={{ opacity: 0.3 }}
           />
           <p className="text-xs mb-2">
-            Enter a memory address to open a Hex Viewer tab, or click any address in the Module Browser.
+            Enter an address to open a Hex Viewer or Disassembler tab.
           </p>
           <p className="text-[10px]">
-            Each hex tab has its own navigation, search, and editing tools.
+            Click any address in the Module Browser to jump there.
           </p>
         </div>
       </div>

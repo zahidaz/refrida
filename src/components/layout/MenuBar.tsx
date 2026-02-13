@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { TEMPLATES } from "@/lib/templates.ts";
 import { importFile, exportFile } from "@/lib/fileIO.ts";
 import { useScriptsStore } from "@/stores/scripts.ts";
 import { useSessionStore } from "@/stores/session.ts";
@@ -26,7 +25,7 @@ export default function MenuBar({ editorRef, onSave }: Props) {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const barRef = useRef<HTMLDivElement>(null);
 
-  const { syncCurrentTab, addTab, openInNewTab, getActiveTab } =
+  const { syncCurrentTab, addTab, getActiveTab } =
     useScriptsStore();
   const {
     sessionActive,
@@ -37,7 +36,7 @@ export default function MenuBar({ editorRef, onSave }: Props) {
     setScriptRuntime,
   } = useSessionStore();
   const { toggle: toggleTheme } = useThemeStore();
-  const { toggleSidePanel, toggleBottomPanel, setCommandPaletteOpen, setAboutOpen, setWelcomeOpen } =
+  const { toggleSidePanel, toggleBottomPanel, setCommandPaletteOpen, setAboutOpen, setWelcomeOpen, setTemplateBrowserOpen } =
     useLayoutStore();
 
   useEffect(() => {
@@ -78,19 +77,6 @@ export default function MenuBar({ editorRef, onSave }: Props) {
     close();
     onSave();
   }
-
-  const templateItems: MenuItem[] = Object.entries(TEMPLATES).map(
-    ([key, t]) => ({
-      label: t.label,
-      action: () => {
-        close();
-        const code = TEMPLATES[key].code;
-        const getCurrentContent = () => editorRef.current?.getValue() ?? "";
-        openInNewTab(t.label, code, getCurrentContent);
-        editorRef.current?.setValue(code);
-      },
-    }),
-  );
 
   const menus: Record<string, MenuItem[]> = {
     File: [
@@ -152,7 +138,13 @@ export default function MenuBar({ editorRef, onSave }: Props) {
         })),
       },
       { label: "", separator: true },
-      { label: "Templates", submenu: templateItems },
+      {
+        label: "Browse Templates...",
+        action: () => {
+          close();
+          setTemplateBrowserOpen(true);
+        },
+      },
     ],
     View: [
       {

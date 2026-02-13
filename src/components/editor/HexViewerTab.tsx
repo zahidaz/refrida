@@ -8,9 +8,20 @@ import {
 } from "@/stores/memory.ts";
 import { useSessionStore } from "@/stores/session.ts";
 import { useScriptsStore } from "@/stores/scripts.ts";
+import { useBookmarksStore } from "@/stores/bookmarks.ts";
 import { copyToClipboard } from "@/lib/clipboard.ts";
+import { navigateToDisasm } from "@/lib/navigation.ts";
 
 const CHUNK_SIZES = [128, 256, 512, 1024, 2048];
+
+function byteColor(b: number): string {
+  if (b === 0x00) return "var(--text-muted)";
+  if (b === 0xff) return "#ef4444";
+  if (b >= 0x20 && b <= 0x7e) return "#34d399";
+  if (b === 0x0a || b === 0x0d || b === 0x09) return "#60a5fa";
+  if (b < 0x20) return "#a78bfa";
+  return "#f59e0b";
+}
 const BYTES_PER_ROW_OPTIONS = [8, 16, 32];
 
 interface Props {
@@ -131,9 +142,7 @@ function HexGrid({
                       ? "#ef4444"
                       : isHighlight
                         ? "#fbbf24"
-                        : byte === 0
-                          ? "var(--text-muted)"
-                          : "var(--text-primary)",
+                        : byteColor(byte),
                     background: isSelected
                       ? "var(--accent-soft)"
                       : "transparent",
@@ -305,6 +314,7 @@ function HexToolbar({
   onNavigate: (addr: string) => void;
 }) {
   const store = useMemoryStore();
+  const bookmarks = useBookmarksStore();
 
   return (
     <div
@@ -341,7 +351,7 @@ function HexToolbar({
           <button
             key={size}
             onClick={() => store.setChunkSize(tabId, size)}
-            className="text-[10px] px-1 py-0.5 rounded"
+            className="text-[10px] px-1 py-0.5 rounded icon-btn"
             style={{
               color: ts.chunkSize === size ? "var(--accent-text)" : "var(--text-muted)",
               background: ts.chunkSize === size ? "var(--accent-soft)" : "transparent",
@@ -357,7 +367,7 @@ function HexToolbar({
           <button
             key={n}
             onClick={() => store.setBytesPerRow(tabId, n)}
-            className="text-[10px] px-1 py-0.5 rounded"
+            className="text-[10px] px-1 py-0.5 rounded icon-btn"
             style={{
               color: ts.bytesPerRow === n ? "var(--accent-text)" : "var(--text-muted)",
               background: ts.bytesPerRow === n ? "var(--accent-soft)" : "transparent",
@@ -375,7 +385,7 @@ function HexToolbar({
             <button
               onClick={() => store.readPrev(tabId)}
               disabled={ts.loading}
-              className="text-[10px] px-1.5 py-0.5 rounded border"
+              className="text-[10px] px-1.5 py-0.5 rounded border icon-btn"
               style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
               title="Previous chunk"
             >
@@ -384,7 +394,7 @@ function HexToolbar({
             <button
               onClick={() => store.readNext(tabId)}
               disabled={ts.loading}
-              className="text-[10px] px-1.5 py-0.5 rounded border"
+              className="text-[10px] px-1.5 py-0.5 rounded border icon-btn"
               style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
               title="Next chunk"
             >
@@ -393,7 +403,7 @@ function HexToolbar({
             <button
               onClick={() => store.read(tabId)}
               disabled={ts.loading}
-              className="text-[10px] px-1.5 py-0.5 rounded border"
+              className="text-[10px] px-1.5 py-0.5 rounded border icon-btn"
               style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
               title="Refresh"
             >
@@ -401,11 +411,31 @@ function HexToolbar({
             </button>
             <button
               onClick={() => store.download(tabId)}
-              className="text-[10px] px-1.5 py-0.5 rounded border"
+              className="text-[10px] px-1.5 py-0.5 rounded border icon-btn"
               style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
               title="Download as binary"
             >
               <i className="fa-solid fa-download" style={{ fontSize: 8 }} />
+            </button>
+            <button
+              onClick={() => { if (ts.currentAddress) navigateToDisasm(ts.currentAddress); }}
+              className="text-[10px] px-1.5 py-0.5 rounded border icon-btn"
+              style={{ borderColor: "var(--border)", color: "#f59e0b" }}
+              title="Disassemble at this address"
+            >
+              <i className="fa-solid fa-microchip" style={{ fontSize: 8 }} />
+            </button>
+            <button
+              onClick={() => {
+                if (ts.currentAddress) {
+                  bookmarks.add({ label: ts.currentAddress, address: ts.currentAddress, type: "hex" });
+                }
+              }}
+              className="text-[10px] px-1.5 py-0.5 rounded border icon-btn"
+              style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
+              title="Bookmark this address"
+            >
+              <i className="fa-solid fa-bookmark" style={{ fontSize: 8 }} />
             </button>
           </>
         )}
@@ -423,7 +453,7 @@ function HexToolbar({
             </button>
             <button
               onClick={() => store.discardChanges(tabId)}
-              className="text-[10px] px-1.5 py-0.5 rounded border"
+              className="text-[10px] px-1.5 py-0.5 rounded border icon-btn"
               style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
               title="Discard changes"
             >
@@ -443,7 +473,7 @@ function HexToolbar({
               <button
                 key={t}
                 onClick={() => store.setSearchType(tabId, t)}
-                className="text-[9px] px-1.5 py-0.5 rounded"
+                className="text-[9px] px-1.5 py-0.5 rounded icon-btn"
                 style={{
                   background: ts.searchType === t ? "var(--accent)" : "transparent",
                   color: ts.searchType === t ? "white" : "var(--text-muted)",

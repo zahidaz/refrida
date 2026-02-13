@@ -14,7 +14,7 @@ function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
 
-export type TabType = "code" | "hex";
+export type TabType = "code" | "hex" | "asm";
 
 export interface ScriptTab {
   id: string;
@@ -51,6 +51,7 @@ interface ScriptsState {
   deleteFromLibrary: (id: string) => void;
   openInNewTab: (name: string, content: string, getCurrentContent: () => string) => void;
   openHexTab: (address: string, getCurrentContent: () => string) => void;
+  openAsmTab: (address: string, getCurrentContent: () => string) => void;
   reorderTabs: (fromId: string, toId: string) => void;
   updateTabContent: (content: string) => void;
   getActiveTab: () => ScriptTab | undefined;
@@ -208,6 +209,21 @@ export const useScriptsStore = create<ScriptsState>((set, get) => ({
     const id = generateId();
     const label = address ? `Hex: ${address}` : "Hex Viewer";
     const newTab: ScriptTab = { id, name: label, type: "hex", content: "", address };
+    const newTabs = [...tabs, newTab];
+    set({ tabs: newTabs, activeTabId: id });
+    setItem(TABS_KEY, { tabs: newTabs, activeTabId: id });
+  },
+
+  openAsmTab: (address, getCurrentContent) => {
+    const state = get();
+    const tabs = state.tabs.map((t) =>
+      t.id === state.activeTabId && t.type === "code"
+        ? { ...t, content: getCurrentContent() }
+        : t,
+    );
+    const id = generateId();
+    const label = address ? `ASM: ${address}` : "Disassembler";
+    const newTab: ScriptTab = { id, name: label, type: "asm", content: "", address };
     const newTabs = [...tabs, newTab];
     set({ tabs: newTabs, activeTabId: id });
     setItem(TABS_KEY, { tabs: newTabs, activeTabId: id });

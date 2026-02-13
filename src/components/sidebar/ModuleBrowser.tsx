@@ -10,7 +10,7 @@ import {
 } from "@/stores/modules.ts";
 import { useSessionStore } from "@/stores/session.ts";
 import { copyToClipboard } from "@/lib/clipboard.ts";
-import { navigateToMemory } from "@/lib/navigation.ts";
+import { navigateToMemory, navigateToDisasm } from "@/lib/navigation.ts";
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -44,7 +44,7 @@ function AddressCell({ address, className }: { address: string; className?: stri
 function MemoryJumpBtn({ address }: { address: string }) {
   return (
     <button
-      className="text-[9px] px-1 shrink-0 opacity-60 hover:opacity-100"
+      className="text-[9px] px-1 shrink-0 icon-btn"
       style={{ color: "var(--accent-text)" }}
       onClick={(e) => {
         e.stopPropagation();
@@ -53,6 +53,22 @@ function MemoryJumpBtn({ address }: { address: string }) {
       title="View in Memory"
     >
       <i className="fa-solid fa-arrow-right-to-bracket" style={{ fontSize: 8 }} />
+    </button>
+  );
+}
+
+function DisasmBtn({ address }: { address: string }) {
+  return (
+    <button
+      className="text-[9px] px-1 shrink-0 icon-btn"
+      style={{ color: "#f59e0b" }}
+      onClick={(e) => {
+        e.stopPropagation();
+        navigateToDisasm(address);
+      }}
+      title="Disassemble"
+    >
+      <i className="fa-solid fa-microchip" style={{ fontSize: 8 }} />
     </button>
   );
 }
@@ -80,6 +96,7 @@ function ExportsView({ items, filter }: { items: ExportInfo[]; filter: string })
         <div key={i} className="flex items-center gap-2 px-3 pl-8 py-0.5 text-[11px] hover-row">
           <TypeBadge type={exp.type} />
           <span className="flex-1 truncate" style={{ color: "var(--text-primary)" }}>{exp.name}</span>
+          {exp.type === "function" && <DisasmBtn address={exp.address} />}
           <MemoryJumpBtn address={exp.address} />
           <AddressCell address={exp.address} />
         </div>
@@ -130,6 +147,7 @@ function SymbolsView({ items, filter }: { items: SymbolInfo[]; filter: string })
             <span className="text-[8px] font-bold" style={{ color: "var(--console-ok)" }}>G</span>
           )}
           <span className="flex-1 truncate" style={{ color: "var(--text-primary)" }}>{sym.name}</span>
+          {sym.type === "function" && <DisasmBtn address={sym.address} />}
           <MemoryJumpBtn address={sym.address} />
           <AddressCell address={sym.address} />
         </div>
@@ -180,33 +198,33 @@ function EmptyMessage({ text }: { text: string }) {
   );
 }
 
-function ModuleDetail({ moduleName }: { moduleName: string }) {
+function ModuleDetail({ moduleKey }: { moduleKey: string }) {
   const state = useModulesStore();
   const { moduleTab, loadingDetail, detailFilter, exports, imports, symbols, ranges } = state;
 
-  const content = (() => {
-    if (loadingDetail && !getCacheForTab(moduleName)) {
-      return <EmptyMessage text={`Loading ${moduleTab}...`} />;
-    }
+  function getCacheForTab(key: string) {
     switch (moduleTab) {
-      case "exports": return <ExportsView items={exports[moduleName] ?? []} filter={detailFilter} />;
-      case "imports": return <ImportsView items={imports[moduleName] ?? []} filter={detailFilter} />;
-      case "symbols": return <SymbolsView items={symbols[moduleName] ?? []} filter={detailFilter} />;
-      case "sections": return <SectionsView items={ranges[moduleName] ?? []} filter={detailFilter} />;
-    }
-  })();
-
-  function getCacheForTab(name: string) {
-    switch (moduleTab) {
-      case "exports": return exports[name];
-      case "imports": return imports[name];
-      case "symbols": return symbols[name];
-      case "sections": return ranges[name];
+      case "exports": return exports[key];
+      case "imports": return imports[key];
+      case "symbols": return symbols[key];
+      case "sections": return ranges[key];
     }
   }
 
+  const content = (() => {
+    if (loadingDetail && !getCacheForTab(moduleKey)) {
+      return <EmptyMessage text={`Loading ${moduleTab}...`} />;
+    }
+    switch (moduleTab) {
+      case "exports": return <ExportsView items={exports[moduleKey] ?? []} filter={detailFilter} />;
+      case "imports": return <ImportsView items={imports[moduleKey] ?? []} filter={detailFilter} />;
+      case "symbols": return <SymbolsView items={symbols[moduleKey] ?? []} filter={detailFilter} />;
+      case "sections": return <SectionsView items={ranges[moduleKey] ?? []} filter={detailFilter} />;
+    }
+  })();
+
   const count = (() => {
-    const cache = getCacheForTab(moduleName);
+    const cache = getCacheForTab(moduleKey);
     return cache ? cache.length : 0;
   })();
 
@@ -217,7 +235,7 @@ function ModuleDetail({ moduleName }: { moduleName: string }) {
           <button
             key={tab.id}
             onClick={() => state.setModuleTab(tab.id)}
-            className="text-[9px] px-1.5 py-0.5 rounded"
+            className="text-[9px] px-1.5 py-0.5 rounded icon-btn"
             style={{
               background: moduleTab === tab.id ? "var(--accent)" : "transparent",
               color: moduleTab === tab.id ? "white" : "var(--text-muted)",
@@ -293,7 +311,7 @@ export default function ModuleBrowser() {
         <button
           onClick={() => state.enumerate()}
           disabled={state.loading}
-          className={`text-[10px] px-1.5 py-0.5 rounded border ${state.loading ? "loading" : ""}`}
+          className={`text-[10px] px-1.5 py-0.5 rounded border icon-btn ${state.loading ? "loading" : ""}`}
           style={{ borderColor: "var(--border)", color: "var(--text-secondary)" }}
         >
           Refresh
@@ -322,13 +340,13 @@ export default function ModuleBrowser() {
           </div>
         ) : (
           filtered.map((mod) => (
-            <div key={mod.name}>
+            <div key={mod.base}>
               <div
                 className="flex items-center gap-2 px-3 py-1 text-xs cursor-pointer hover-row group"
-                onClick={() => state.toggleModule(mod.name)}
+                onClick={() => state.toggleModule(mod.name, mod.base)}
               >
                 <i
-                  className={`fa-solid fa-chevron-right text-[8px] transition-transform ${state.expandedModule === mod.name ? "rotate-90" : ""}`}
+                  className={`fa-solid fa-chevron-right text-[8px] transition-transform ${state.expandedModule === mod.base ? "rotate-90" : ""}`}
                   style={{ color: "var(--text-muted)" }}
                 />
                 <span className="flex-1 truncate font-medium" style={{ color: "var(--text-primary)" }}>
@@ -363,7 +381,7 @@ export default function ModuleBrowser() {
                   {formatSize(mod.size)}
                 </span>
               </div>
-              {state.expandedModule === mod.name && <ModuleDetail moduleName={mod.name} />}
+              {state.expandedModule === mod.base && <ModuleDetail moduleKey={mod.base} />}
             </div>
           ))
         )}

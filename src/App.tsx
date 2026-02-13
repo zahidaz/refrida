@@ -9,9 +9,12 @@ import ProcessPicker from "@/components/connection/ProcessPicker.tsx";
 import AboutDialog from "@/components/layout/AboutDialog.tsx";
 import WelcomeScreen from "@/components/layout/WelcomeScreen.tsx";
 import SaveDialog from "@/components/ui/SaveDialog.tsx";
+import TemplateBrowser from "@/components/ui/TemplateBrowser.tsx";
+import { Toaster } from "react-hot-toast";
 import ScriptEditor from "@/components/editor/ScriptEditor.tsx";
 import type { MonacoEditor } from "@/components/editor/ScriptEditor.tsx";
 import HexViewerTab from "@/components/editor/HexViewerTab.tsx";
+import DisassemblerTab from "@/components/editor/DisassemblerTab.tsx";
 import TabBar from "@/components/editor/TabBar.tsx";
 import ConsolePanel from "@/components/console/ConsolePanel.tsx";
 import { useResizable, useResizablePercent } from "@/hooks/useResizable.ts";
@@ -43,6 +46,7 @@ export default function App() {
   const processPickerOpen = useLayoutStore((s) => s.processPickerOpen);
   const aboutOpen = useLayoutStore((s) => s.aboutOpen);
   const welcomeOpen = useLayoutStore((s) => s.welcomeOpen);
+  const templateBrowserOpen = useLayoutStore((s) => s.templateBrowserOpen);
   const setWelcomeOpen = useLayoutStore((s) => s.setWelcomeOpen);
 
   const sideResize = useResizable(
@@ -189,6 +193,8 @@ export default function App() {
                 />
               ) : activeTabType === "hex" ? (
                 <HexViewerTab tabId={activeTabId} />
+              ) : activeTabType === "asm" ? (
+                <DisassemblerTab tabId={activeTabId} />
               ) : (
                 <ScriptEditor
                   editorRef={editorRef}
@@ -251,6 +257,27 @@ export default function App() {
           onClose={() => setSaveDialogOpen(false)}
         />
       )}
+      {templateBrowserOpen && (
+        <TemplateBrowser
+          onSelect={(name, code) => {
+            handleLibraryLoad(name, code);
+          }}
+          onClose={() => useLayoutStore.getState().setTemplateBrowserOpen(false)}
+        />
+      )}
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          duration: 2000,
+          style: {
+            background: "var(--bg-tertiary)",
+            color: "var(--text-primary)",
+            border: "1px solid var(--border)",
+            fontSize: "12px",
+            padding: "8px 12px",
+          },
+        }}
+      />
     </div>
   );
 }

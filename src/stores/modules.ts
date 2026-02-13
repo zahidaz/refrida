@@ -53,6 +53,7 @@ interface DumpChunk {
 interface ModulesState {
   modules: ModuleInfo[];
   expandedModule: string | null;
+  expandedModuleName: string | null;
   moduleTab: ModuleTab;
   detailFilter: string;
   exports: Record<string, ExportInfo[]>;
@@ -64,8 +65,8 @@ interface ModulesState {
   loadingDetail: boolean;
   dumping: boolean;
   enumerate: () => Promise<void>;
-  fetchDetail: (moduleName: string, tab: ModuleTab) => Promise<void>;
-  toggleModule: (name: string) => void;
+  fetchDetail: (key: string, moduleName: string, tab: ModuleTab) => Promise<void>;
+  toggleModule: (name: string, base: string) => void;
   setModuleTab: (tab: ModuleTab) => void;
   setSearch: (q: string) => void;
   setDetailFilter: (q: string) => void;
@@ -85,6 +86,7 @@ function getCacheForTab(state: ModulesState, tab: ModuleTab, name: string): unkn
 export const useModulesStore = create<ModulesState>((set, get) => ({
   modules: [],
   expandedModule: null,
+  expandedModuleName: null,
   moduleTab: "exports",
   detailFilter: "",
   exports: {},
@@ -99,52 +101,52 @@ export const useModulesStore = create<ModulesState>((set, get) => ({
   enumerate: async () => {
     set({ loading: true });
     const result = await runUtilityScript<ModuleInfo>(enumerateModulesScript());
-    set({ modules: result.data, loading: false, expandedModule: null });
+    set({ modules: result.data, loading: false, expandedModule: null, expandedModuleName: null });
   },
 
-  fetchDetail: async (moduleName: string, tab: ModuleTab) => {
+  fetchDetail: async (key: string, moduleName: string, tab: ModuleTab) => {
     set({ loadingDetail: true });
     switch (tab) {
       case "exports": {
         const r = await runUtilityScript<ExportInfo>(enumerateExportsScript(moduleName));
-        set((s) => ({ exports: { ...s.exports, [moduleName]: r.data }, loadingDetail: false }));
+        set((s) => ({ exports: { ...s.exports, [key]: r.data }, loadingDetail: false }));
         break;
       }
       case "imports": {
         const r = await runUtilityScript<ImportInfo>(enumerateImportsScript(moduleName));
-        set((s) => ({ imports: { ...s.imports, [moduleName]: r.data }, loadingDetail: false }));
+        set((s) => ({ imports: { ...s.imports, [key]: r.data }, loadingDetail: false }));
         break;
       }
       case "symbols": {
         const r = await runUtilityScript<SymbolInfo>(enumerateSymbolsScript(moduleName));
-        set((s) => ({ symbols: { ...s.symbols, [moduleName]: r.data }, loadingDetail: false }));
+        set((s) => ({ symbols: { ...s.symbols, [key]: r.data }, loadingDetail: false }));
         break;
       }
       case "sections": {
         const r = await runUtilityScript<RangeInfo>(enumerateRangesScript(moduleName));
-        set((s) => ({ ranges: { ...s.ranges, [moduleName]: r.data }, loadingDetail: false }));
+        set((s) => ({ ranges: { ...s.ranges, [key]: r.data }, loadingDetail: false }));
         break;
       }
     }
   },
 
-  toggleModule: (name: string) => {
+  toggleModule: (name: string, base: string) => {
     const { expandedModule, moduleTab, fetchDetail } = get();
-    if (expandedModule === name) {
-      set({ expandedModule: null, detailFilter: "" });
+    if (expandedModule === base) {
+      set({ expandedModule: null, expandedModuleName: null, detailFilter: "" });
     } else {
-      set({ expandedModule: name, detailFilter: "" });
-      if (!getCacheForTab(get(), moduleTab, name)) {
-        fetchDetail(name, moduleTab);
+      set({ expandedModule: base, expandedModuleName: name, detailFilter: "" });
+      if (!getCacheForTab(get(), moduleTab, base)) {
+        fetchDetail(base, name, moduleTab);
       }
     }
   },
 
   setModuleTab: (tab: ModuleTab) => {
-    const { expandedModule, fetchDetail } = get();
+    const { expandedModule, expandedModuleName, fetchDetail } = get();
     set({ moduleTab: tab, detailFilter: "" });
-    if (expandedModule && !getCacheForTab(get(), tab, expandedModule)) {
-      fetchDetail(expandedModule, tab);
+    if (expandedModule && expandedModuleName && !getCacheForTab(get(), tab, expandedModule)) {
+      fetchDetail(expandedModule, expandedModuleName, tab);
     }
   },
 
@@ -176,6 +178,7 @@ export const useModulesStore = create<ModulesState>((set, get) => ({
     set({
       modules: [],
       expandedModule: null,
+      expandedModuleName: null,
       moduleTab: "exports",
       detailFilter: "",
       exports: {},

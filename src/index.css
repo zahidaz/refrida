@@ -80,6 +80,20 @@ body,
   background: var(--hover-bg);
 }
 
+.icon-btn {
+  transition: background 0.1s, transform 0.08s, filter 0.1s;
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  background: var(--hover-bg);
+  filter: brightness(1.2);
+}
+
+.icon-btn:active {
+  transform: scale(0.9);
+}
+
 .resize-handle-x {
   width: 4px;
   cursor: col-resize;

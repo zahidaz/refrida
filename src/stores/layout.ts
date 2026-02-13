@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { getItem, setItem } from "@/lib/storage.ts";
 
-export type Activity = "scripts" | "settings" | "modules" | "memory" | "search";
+export type Activity = "scripts" | "settings" | "modules" | "memory" | "search" | "bookmarks" | "monitors";
 
 interface LayoutState {
   activeActivity: Activity;
@@ -13,6 +13,7 @@ interface LayoutState {
   processPickerOpen: boolean;
   aboutOpen: boolean;
   welcomeOpen: boolean;
+  templateBrowserOpen: boolean;
   setActiveActivity: (activity: Activity) => void;
   toggleActivity: (activity: Activity) => void;
   setSidePanelVisible: (v: boolean) => void;
@@ -25,6 +26,7 @@ interface LayoutState {
   setProcessPickerOpen: (v: boolean) => void;
   setAboutOpen: (v: boolean) => void;
   setWelcomeOpen: (v: boolean) => void;
+  setTemplateBrowserOpen: (v: boolean) => void;
 }
 
 export const useLayoutStore = create<LayoutState>((set, get) => ({
@@ -37,6 +39,7 @@ export const useLayoutStore = create<LayoutState>((set, get) => ({
   processPickerOpen: false,
   aboutOpen: false,
   welcomeOpen: getItem("refrida-welcome-open", true),
+  templateBrowserOpen: false,
 
   setActiveActivity: (activeActivity) => set({ activeActivity }),
 
@@ -83,6 +86,7 @@ export const useLayoutStore = create<LayoutState>((set, get) => ({
     set({ connectionDialogOpen }),
   setProcessPickerOpen: (processPickerOpen) => set({ processPickerOpen }),
   setAboutOpen: (aboutOpen) => set({ aboutOpen }),
+  setTemplateBrowserOpen: (templateBrowserOpen) => set({ templateBrowserOpen }),
   setWelcomeOpen: (welcomeOpen) => {
     set({ welcomeOpen });
     setItem("refrida-welcome-open", welcomeOpen);

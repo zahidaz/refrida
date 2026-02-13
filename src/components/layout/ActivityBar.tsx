@@ -6,6 +6,8 @@ const ACTIVITIES: Array<{ id: Activity; icon: string; label: string }> = [
   { id: "modules", icon: "fa-cubes", label: "Modules" },
   { id: "memory", icon: "fa-memory", label: "Memory" },
   { id: "search", icon: "fa-magnifying-glass", label: "Search" },
+  { id: "bookmarks", icon: "fa-bookmark", label: "Bookmarks" },
+  { id: "monitors", icon: "fa-wave-square", label: "Monitors" },
   { id: "settings", icon: "fa-gear", label: "Settings" },
 ];
 

@@ -22,6 +22,7 @@
     "frida-web-client-browserify": "github:zahidaz/frida-web-client-browserify",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-hot-toast": "^2.6.0",
     "zustand": "^5.0.0"
   },
   "devDependencies": {
