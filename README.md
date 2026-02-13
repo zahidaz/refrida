@@ -1,84 +1,58 @@
 <h1 align="center">reFrida</h1>
 
 <p align="center">
-  A browser-based IDE for <a href="https://frida.re/">frida-server</a>.<br>
-  Attach to processes. Run instrumentation scripts. See results instantly.
+  Frida, in your browser.
 </p>
 
 <p align="center">
-  <a href="https://zahidaz.github.io/refrida/"><img src="https://img.shields.io/badge/Open_App-f59e0b?style=for-the-badge" alt="Open App"></a>
-  &nbsp;
-  <a href="https://github.com/zahidaz/refrida"><img src="https://img.shields.io/github/license/zahidaz/refrida?style=for-the-badge&color=555" alt="License"></a>
+  <a href="https://zahidaz.github.io/refrida/"><img src="https://img.shields.io/badge/Open_reFrida-f59e0b?style=for-the-badge" alt="Open reFrida"></a>
 </p>
 
 ---
 
-Point your frida-server at a network interface and open reFrida in a browser — that's it. No local tools, no CLI, no setup beyond a running Frida instance.
+reFrida is a browser-based IDE for [Frida](https://frida.re/). It connects to a running frida-server over the network and gives you everything you need to instrument processes — a script editor, a process browser, an integrated console — all without installing anything locally.
 
-```bash
+Open it. Connect. Start hacking.
+
+---
+
+### At a glance
+
+**Write scripts** in a full-featured editor with syntax highlighting, tabs, and 12 built-in Frida templates to get you started fast.
+
+**Browse processes** running on the target device — search, filter, sort, kill, or spawn new ones.
+
+**See output immediately** in a console that filters by script run, supports JSON expansion, click-to-copy, search, and export.
+
+**Share connections** by bookmarking a URL like `?host=192.168.1.5:27042` — opens reFrida pre-configured and ready to connect.
+
+**Work your way** with a VS Code-style layout, command palette, keyboard shortcuts, resizable panels, and dark/light themes.
+
+---
+
+### Getting started
+
+Start frida-server on your target:
+
+```
 frida-server --listen=0.0.0.0:27042
 ```
 
-Then visit **[zahidaz.github.io/refrida](https://zahidaz.github.io/refrida/)** or self-host your own.
+Then open **[zahidaz.github.io/refrida](https://zahidaz.github.io/refrida/)**, enter the address, and connect.
 
 ---
 
-### What it does
+### Run your own instance
 
-- Full IDE layout — activity bar, resizable panels, tabbed editor, integrated console
-- Monaco-powered script editor with 12 built-in Frida templates
-- Process and application browser with search, sort, auto-refresh, and kill
-- Spawn mode with resume support
-- Per-run console output — filter logs by script execution, search, export
-- Runtime selector — Default, QJS, or V8 per script
-- URL parameters — bookmark `?host=192.168.1.5:27042&tls=enabled` for instant connect
-- Command palette (Ctrl+P) for keyboard-driven workflows
-- Dark and light themes
-
----
-
-### URL parameters
-
-Pre-fill connection settings for quick access or bookmarks:
-
-| Parameter | Default | Example |
-|-----------|---------|---------|
-| `host` | `127.0.0.1:27042` | `?host=10.0.0.2:27042` |
-| `tls` | `disabled` | `?tls=enabled` |
-| `token` | — | `?token=mytoken` |
-
----
-
-### Self-host
-
-```bash
+```
 git clone https://github.com/zahidaz/refrida.git
 cd refrida
 pnpm install
 pnpm dev
 ```
 
-Production build:
-
-```bash
-pnpm build     # outputs to dist/
-pnpm preview   # preview locally
-```
-
-The output is a static site — deploy it anywhere.
+`pnpm build` produces a static site you can deploy anywhere.
 
 ---
 
-### Built with
-
-[React](https://react.dev/) ·
-[TypeScript](https://www.typescriptlang.org/) ·
-[Vite](https://vite.dev/) ·
-[Tailwind CSS](https://tailwindcss.com/) ·
-[Monaco Editor](https://microsoft.github.io/monaco-editor/) ·
-[Zustand](https://zustand.docs.pmnd.rs/) ·
-[frida-web-client-browserify](https://github.com/zahidaz/frida-web-client-browserify)
-
----
-
-<sub>[MIT License](LICENSE.md) · Made by <a href="https://github.com/zahidaz">@zahidaz</a></sub>
+<sub>[MIT License](LICENSE.md) · <a href="https://github.com/zahidaz">@zahidaz</a></sub>
